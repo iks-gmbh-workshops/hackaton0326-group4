@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/java/com/drumdibum\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/resources/db/migration\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/test/java/com/drumdibum\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/java/com/drumdibum/user\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/java/com/drumdibum/group\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/java/com/drumdibum/activity\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/java/com/drumdibum/invitation\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/java/com/drumdibum/auth\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/java/com/drumdibum/auth/dto\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/java/com/drumdibum/user/dto\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/java/com/drumdibum/group/dto\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/java/com/drumdibum/activity/dto\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/backend/src/main/java/com/drumdibum/invitation/dto\")",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest init -d)",
+      "Bash(npx shadcn@latest add input label card badge separator dialog alert-description -y)",
+      "Bash(npx shadcn@latest add input label card badge separator dialog alert -y)",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/frontend/src/api\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/frontend/src/pages/auth\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/frontend/src/pages/groups\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/frontend/src/pages/activities\")",
+      "Bash(mkdir -p \"c:/Projekte/hackathon/hackaton0326-group4/frontend/src/pages/profile\")"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: drumdibum-postgres
+    environment:
+      POSTGRES_DB: drumdibum
+      POSTGRES_USER: drumdibum
+      POSTGRES_PASSWORD: drumdibum
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: drumdibum-mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+
+volumes:
+  postgres_data:

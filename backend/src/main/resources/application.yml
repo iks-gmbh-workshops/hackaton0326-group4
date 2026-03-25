@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: drumdibum
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/drumdibum
+    username: drumdibum
+    password: drumdibum
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail.smtp.auth: false
+      mail.smtp.starttls.enable: false
+
+app:
+  jwt:
+    secret: drumdibum-dev-secret-key-change-in-production-min-256-bits-long!!
+    expiration-ms: 86400000  # 24 hours
+  frontend-url: http://localhost:5173
+  invitation:
+    expiration-hours: 48
+
+server:
+  port: 8080
