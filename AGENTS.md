@@ -17,13 +17,13 @@ Web application for organizing groups and shared activities.
 ### Backend
 - Spring Boot 3.x (Java 21)
 - Spring Security + JWT (jjwt)
-- Spring Data JPA + PostgreSQL 18 (Hibernate)
+- Spring Data JPA + PostgreSQL 16 (Hibernate)
 - Flyway migrations
 - Springdoc OpenAPI (Swagger UI)
 - Spring Mail + Lombok
 
 ### Infrastructure
-- Docker Compose: PostgreSQL 18, Mailhog
+- Docker Compose: PostgreSQL 16, Mailhog
 - Local-only deployment
 
 ## Project Structure
