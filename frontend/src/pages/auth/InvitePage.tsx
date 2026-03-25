@@ -49,11 +49,18 @@ export function InvitePage() {
                 please register first with the email address the invitation was sent to.
               </p>
               <div className="flex gap-3">
-                <Button asChild className="flex-1">
-                  <Link to={`/login?redirect=/invite/${token}`}>Login</Link>
+                <Button
+                  className="flex-1"
+                  render={<Link to={`/login?redirect=/invite/${token}`} />}
+                >
+                  Login
                 </Button>
-                <Button variant="outline" asChild className="flex-1">
-                  <Link to={`/register?redirect=/invite/${token}`}>Register</Link>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  render={<Link to={`/register?redirect=/invite/${token}`} />}
+                >
+                  Register
                 </Button>
               </div>
             </>

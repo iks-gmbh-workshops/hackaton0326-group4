@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
-  groupId: z.coerce.number().min(1, 'Please select a group'),
+  groupId: z.number().min(1, 'Please select a group'),
   scheduledAt: z.string().min(1, 'Date and time is required'),
 });
 
@@ -31,12 +31,18 @@ export function CreateActivityPage() {
     queryFn: () => groupsApi.getMyGroups().then((r) => r.data),
   });
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      groupId: preselectedGroupId ? Number(preselectedGroupId) : undefined,
+      groupId: preselectedGroupId ? Number(preselectedGroupId) : 0,
     },
   });
+
+  useEffect(() => {
+    if (preselectedGroupId && groups?.some((group) => group.id === Number(preselectedGroupId))) {
+      setValue('groupId', Number(preselectedGroupId));
+    }
+  }, [groups, preselectedGroupId, setValue]);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -72,7 +78,9 @@ export function CreateActivityPage() {
               <select
                 id="groupId"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                {...register('groupId')}
+                {...register('groupId', {
+                  setValueAs: (value) => (value === '' ? 0 : Number(value)),
+                })}
               >
                 <option value="">Select a group</option>
                 {groups?.map((g) => (

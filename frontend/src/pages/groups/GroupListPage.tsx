@@ -19,8 +19,8 @@ export function GroupListPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl">My Groups</h1>
-        <Button asChild>
-          <Link to="/groups/new">Create Group</Link>
+        <Button render={<Link to="/groups/new" />}>
+          Create Group
         </Button>
       </div>
 

@@ -48,6 +48,12 @@ Web application for organizing groups and shared activities. Users can create gr
 | Edit profile (first/last name) | UserController PUT /api/users/me | ProfilePage | Done |
 | Delete account (GDPR, cascade all data) | UserController DELETE /api/users/me | ProfilePage | Done |
 
+### 5. Frontend Quality
+
+| Requirement | Backend | Frontend | Status |
+|---|---|---|---|
+| Frontend unit test setup and core flow coverage | — | Vitest + React Testing Library tests for ProtectedRoute, Navbar, LoginPage, InvitePage, CreateGroupPage, ActivityListPage, ActivityDetailPage, CreateActivityPage | Done |
+
 ---
 
 ## What's Done
@@ -68,6 +74,7 @@ Web application for organizing groups and shared activities. Users can create gr
 - API client layer (Axios) with all endpoint bindings
 - Auth context (useAuth hook with login/logout/session refresh)
 - Router setup with protected routes
+- Vitest + React Testing Library setup with shared test utilities
 - Navbar with links to Groups, Activities, Profile
 - **All pages completed:** LoginPage, RegisterPage, InvitePage, GroupListPage, CreateGroupPage, GroupDetailPage, ActivityListPage, CreateActivityPage, ActivityDetailPage, ProfilePage
 

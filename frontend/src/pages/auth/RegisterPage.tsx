@@ -17,7 +17,7 @@ const registerSchema = z.object({
     .regex(/[a-z]/, 'Must contain at least one lowercase letter')
     .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
     .regex(/\d/, 'Must contain at least one digit')
-    .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Must contain at least one special character'),
+    .refine((value) => /[^A-Za-z0-9]/.test(value), 'Must contain at least one special character'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   tosAccepted: z.literal(true, { error: 'You must accept the terms of service' }),

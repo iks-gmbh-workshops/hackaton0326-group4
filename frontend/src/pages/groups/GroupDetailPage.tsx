@@ -193,8 +193,11 @@ export function GroupDetailPage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl">Upcoming Activities</h2>
-            <Button asChild size="sm">
-              <Link to={`/activities/new?groupId=${id}`}>New Activity</Link>
+            <Button
+              size="sm"
+              render={<Link to={`/activities/new?groupId=${id}`} />}
+            >
+              New Activity
             </Button>
           </div>
 
