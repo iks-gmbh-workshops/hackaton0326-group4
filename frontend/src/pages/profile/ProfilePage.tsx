@@ -58,13 +58,21 @@ export function ProfilePage() {
   const handleDelete = async () => {
     try {
       setDeleting(true);
+      setError('');
       await usersApi.deleteAccount();
-      await logout();
-      navigate('/login');
+
+      try {
+        await logout();
+      } catch {
+        await refreshUser();
+      }
+
+      navigate('/login', { replace: true });
     } catch {
+      setError('Failed to delete account');
+    } finally {
       setDeleting(false);
       setDeleteOpen(false);
-      setError('Failed to delete account');
     }
   };
 

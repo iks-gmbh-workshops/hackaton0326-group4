@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.Collections;
 
@@ -70,6 +71,27 @@ class JwtAuthenticationFilterTest {
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         verify(filterChain).doFilter(request, response);
         verify(userDetailsService, never()).loadUserByUsername(any());
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void doFilter_deletedUser_continuesWithoutAuthentication() throws Exception {
+        SecurityContextHolder.clearContext();
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setCookies(new Cookie("jwt", "valid-token"));
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+        when(jwtService.extractEmail("valid-token")).thenReturn("deleted@example.com");
+        when(userDetailsService.loadUserByUsername("deleted@example.com"))
+                .thenThrow(new UsernameNotFoundException("User not found"));
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verify(filterChain).doFilter(request, response);
 
         SecurityContextHolder.clearContext();
     }

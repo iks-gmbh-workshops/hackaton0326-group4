@@ -1,7 +1,9 @@
 package com.drumdibum.user;
 
+import com.drumdibum.activity.ActivityRepository;
 import com.drumdibum.activity.RsvpRepository;
 import com.drumdibum.exception.ResourceNotFoundException;
+import com.drumdibum.group.GroupRepository;
 import com.drumdibum.group.GroupMembershipRepository;
 import com.drumdibum.user.dto.UpdateProfileRequest;
 import com.drumdibum.user.dto.UserResponse;
@@ -17,6 +19,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -24,6 +27,10 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private GroupRepository groupRepository;
+    @Mock
+    private ActivityRepository activityRepository;
     @Mock
     private GroupMembershipRepository groupMembershipRepository;
     @Mock
@@ -100,13 +107,15 @@ class UserServiceTest {
     // --- deleteAccount ---
 
     @Test
-    void deleteAccount_success_deletesInCorrectOrder() {
+    void deleteAccount_success_deletesOwnedDataBeforeUser() {
         User user = testUser();
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
         userService.deleteAccount("test@example.com");
 
-        InOrder inOrder = inOrder(rsvpRepository, groupMembershipRepository, userRepository);
+        InOrder inOrder = inOrder(groupRepository, activityRepository, rsvpRepository, groupMembershipRepository, userRepository);
+        inOrder.verify(groupRepository).deleteByCreatedById(1L);
+        inOrder.verify(activityRepository).deleteByCreatedById(1L);
         inOrder.verify(rsvpRepository).deleteByUserId(1L);
         inOrder.verify(groupMembershipRepository).deleteByUserId(1L);
         inOrder.verify(userRepository).delete(user);
@@ -120,6 +129,8 @@ class UserServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("User not found");
 
+        verify(groupRepository, never()).deleteByCreatedById(anyLong());
+        verify(activityRepository, never()).deleteByCreatedById(anyLong());
         verify(rsvpRepository, never()).deleteByUserId(any());
         verify(groupMembershipRepository, never()).deleteByUserId(any());
         verify(userRepository, never()).delete(any());
