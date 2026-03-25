@@ -47,7 +47,7 @@ Web application for organizing groups and shared activities. Users can create gr
 |---|---|---|---|
 | View profile | UserController GET /api/users/me | ProfilePage | Done |
 | Edit profile (first/last name) | UserController PUT /api/users/me | ProfilePage | Done |
-| Delete account (GDPR, cascade all data) | UserController DELETE /api/users/me | ProfilePage | Done |
+| Delete account (GDPR, cascade memberships, RSVPs, owned groups, created activities, and clear session cookie) | UserController DELETE /api/users/me | ProfilePage | Done |
 
 ### 5. Frontend Quality
 
