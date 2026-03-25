@@ -77,6 +77,14 @@ class ActivityServiceTest {
                 .build();
     }
 
+    private Rsvp rsvp(User user, Activity activity, Rsvp.RsvpStatus status) {
+        return Rsvp.builder()
+                .user(user)
+                .activity(activity)
+                .status(status)
+                .build();
+    }
+
     // --- createActivity ---
 
     @Test
@@ -92,6 +100,9 @@ class ActivityServiceTest {
             a.setCreatedAt(Instant.now());
             return a;
         });
+        when(rsvpRepository.findByActivityId(100L)).thenReturn(List.of(
+                rsvp(user, testActivity(user, group), Rsvp.RsvpStatus.OPEN)
+        ));
 
         CreateActivityRequest req = new CreateActivityRequest();
         req.setTitle("Hiking");
@@ -106,6 +117,7 @@ class ActivityServiceTest {
         assertThat(response.getGroupId()).isEqualTo(10L);
         assertThat(response.getGroupName()).isEqualTo("Test Group");
         assertThat(response.getCreatedByEmail()).isEqualTo("test@example.com");
+        assertThat(response.getOpenCount()).isEqualTo(1);
         verify(rsvpService).createOpenRsvpsForActivity(any(Activity.class));
     }
 
@@ -170,11 +182,17 @@ class ActivityServiceTest {
         when(groupRepository.findById(10L)).thenReturn(Optional.of(group));
         when(activityRepository.findByGroupIdAndScheduledAtAfterOrderByScheduledAtAsc(eq(10L), any(Instant.class)))
                 .thenReturn(List.of(activity));
+        when(rsvpRepository.findByActivityId(100L)).thenReturn(List.of(
+                rsvp(user, activity, Rsvp.RsvpStatus.ACCEPTED),
+                rsvp(user, activity, Rsvp.RsvpStatus.OPEN)
+        ));
 
         List<ActivityResponse> activities = activityService.getUpcomingActivities(10L);
 
         assertThat(activities).hasSize(1);
         assertThat(activities.get(0).getTitle()).isEqualTo("Test Activity");
+        assertThat(activities.get(0).getAcceptedCount()).isEqualTo(1);
+        assertThat(activities.get(0).getOpenCount()).isEqualTo(1);
     }
 
     @Test
@@ -206,11 +224,15 @@ class ActivityServiceTest {
         Group group = testGroup(user);
         Activity activity = testActivity(user, group);
         when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
+        when(rsvpRepository.findByActivityId(100L)).thenReturn(List.of(
+                rsvp(user, activity, Rsvp.RsvpStatus.DECLINED)
+        ));
 
         ActivityResponse response = activityService.getActivity(100L);
 
         assertThat(response.getId()).isEqualTo(100L);
         assertThat(response.getTitle()).isEqualTo("Test Activity");
+        assertThat(response.getDeclinedCount()).isEqualTo(1);
     }
 
     @Test

@@ -45,7 +45,7 @@ public class ActivityService {
         activityRepository.save(activity);
         rsvpService.createOpenRsvpsForActivity(activity);
 
-        return ActivityResponse.from(activity);
+        return toActivityResponse(activity);
     }
 
     @Transactional(readOnly = true)
@@ -56,14 +56,14 @@ public class ActivityService {
         return activityRepository
                 .findByGroupIdAndScheduledAtAfterOrderByScheduledAtAsc(groupId, Instant.now())
                 .stream()
-                .map(ActivityResponse::from)
+                .map(this::toActivityResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public ActivityResponse getActivity(Long activityId) {
         Activity activity = findActivityById(activityId);
-        return ActivityResponse.from(activity);
+        return toActivityResponse(activity);
     }
 
     @Transactional(readOnly = true)
@@ -103,5 +103,9 @@ public class ActivityService {
     private Activity findActivityById(Long activityId) {
         return activityRepository.findById(activityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Activity not found"));
+    }
+
+    private ActivityResponse toActivityResponse(Activity activity) {
+        return ActivityResponse.from(activity, rsvpRepository.findByActivityId(activity.getId()));
     }
 }

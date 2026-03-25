@@ -39,6 +39,9 @@ export interface ActivityResponse {
   createdByEmail: string;
   scheduledAt: string;
   createdAt: string;
+  acceptedCount: number;
+  declinedCount: number;
+  openCount: number;
 }
 
 export enum RsvpStatus {
