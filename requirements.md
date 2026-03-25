@@ -74,6 +74,7 @@ Web application for organizing groups and shared activities. Users can create gr
 
 ### Infrastructure
 - docker-compose.yml (PostgreSQL 18 + Mailhog)
+- Root .gitignore for IDE and local temp files
 
 ---
 
@@ -81,4 +82,3 @@ Web application for organizing groups and shared activities. Users can create gr
 
 ### Cleanup
 - Remove Vite boilerplate files (App.css, hero.png, react.svg, vite.svg, icons.svg)
-- Add .gitignore at root level
