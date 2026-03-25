@@ -41,6 +41,8 @@ class ActivityServiceTest {
     private GroupMembershipRepository membershipRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private RsvpService rsvpService;
 
     @InjectMocks
     private ActivityService activityService;
@@ -104,6 +106,7 @@ class ActivityServiceTest {
         assertThat(response.getGroupId()).isEqualTo(10L);
         assertThat(response.getGroupName()).isEqualTo("Test Group");
         assertThat(response.getCreatedByEmail()).isEqualTo("test@example.com");
+        verify(rsvpService).createOpenRsvpsForActivity(any(Activity.class));
     }
 
     @Test

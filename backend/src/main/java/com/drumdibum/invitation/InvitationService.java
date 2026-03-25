@@ -1,5 +1,6 @@
 package com.drumdibum.invitation;
 
+import com.drumdibum.activity.RsvpService;
 import com.drumdibum.exception.ResourceNotFoundException;
 import com.drumdibum.group.Group;
 import com.drumdibum.group.GroupMembership;
@@ -28,6 +29,7 @@ public class InvitationService {
     private final GroupMembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
+    private final RsvpService rsvpService;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -86,6 +88,8 @@ public class InvitationService {
                     .build();
             membershipRepository.save(membership);
         }
+
+        rsvpService.createOpenRsvpsForUserInGroup(user, invitation.getGroup());
 
         invitation.setUsed(true);
         invitationRepository.save(invitation);

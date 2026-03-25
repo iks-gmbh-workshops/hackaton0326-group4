@@ -23,6 +23,7 @@ public class ActivityService {
     private final GroupRepository groupRepository;
     private final GroupMembershipRepository membershipRepository;
     private final UserRepository userRepository;
+    private final RsvpService rsvpService;
 
     @Transactional
     public ActivityResponse createActivity(String email, CreateActivityRequest request) {
@@ -42,6 +43,7 @@ public class ActivityService {
                 .scheduledAt(request.getScheduledAt())
                 .build();
         activityRepository.save(activity);
+        rsvpService.createOpenRsvpsForActivity(activity);
 
         return ActivityResponse.from(activity);
     }
