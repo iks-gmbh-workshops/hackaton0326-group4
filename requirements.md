@@ -75,6 +75,7 @@ Web application for organizing groups and shared activities. Users can create gr
 ### Infrastructure
 - docker-compose.yml (PostgreSQL 18 + Mailhog)
 - Root .gitignore for IDE and local temp files
+- Root README.md with local setup and development notes
 
 ---
 
