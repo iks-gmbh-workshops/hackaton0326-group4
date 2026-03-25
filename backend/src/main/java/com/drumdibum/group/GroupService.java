@@ -43,6 +43,7 @@ public class GroupService {
         return GroupResponse.from(group, 1);
     }
 
+    @Transactional(readOnly = true)
     public List<GroupResponse> getMyGroups(String email) {
         User user = findUserByEmail(email);
         return membershipRepository.findByUserId(user.getId()).stream()
@@ -53,12 +54,14 @@ public class GroupService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public GroupResponse getGroup(Long groupId) {
         Group group = findGroupById(groupId);
         int count = membershipRepository.findByGroupId(groupId).size();
         return GroupResponse.from(group, count);
     }
 
+    @Transactional(readOnly = true)
     public List<MemberResponse> getMembers(Long groupId) {
         findGroupById(groupId);
         return membershipRepository.findByGroupId(groupId).stream()

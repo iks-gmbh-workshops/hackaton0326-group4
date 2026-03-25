@@ -46,6 +46,7 @@ public class ActivityService {
         return ActivityResponse.from(activity);
     }
 
+    @Transactional(readOnly = true)
     public List<ActivityResponse> getUpcomingActivities(Long groupId) {
         groupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Group not found"));
@@ -57,11 +58,13 @@ public class ActivityService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public ActivityResponse getActivity(Long activityId) {
         Activity activity = findActivityById(activityId);
         return ActivityResponse.from(activity);
     }
 
+    @Transactional(readOnly = true)
     public List<RsvpResponse> getRsvps(Long activityId) {
         findActivityById(activityId);
         return rsvpRepository.findByActivityId(activityId).stream()
