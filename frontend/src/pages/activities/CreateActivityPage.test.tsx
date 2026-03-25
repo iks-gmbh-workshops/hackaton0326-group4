@@ -81,7 +81,7 @@ describe('CreateActivityPage', () => {
         scheduledAt: new Date('2026-04-05T18:30').toISOString(),
       });
     });
-    expect(screen.getByText('Activity Detail Page')).toBeInTheDocument();
+    expect(await screen.findByText('Activity Detail Page')).toBeInTheDocument();
   });
 
   it('shows a submission error when activity creation fails', async () => {
