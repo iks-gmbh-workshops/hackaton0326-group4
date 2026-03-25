@@ -57,14 +57,54 @@ export function ActivityListPage() {
           >
             <Card className="transition hover:border-accent">
               <CardContent className="py-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="font-medium text-iks-dark-blue">{activity.title}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="min-w-0 flex-1 font-medium text-iks-dark-blue">{activity.title}</p>
+                      <div className="flex shrink-0 items-center justify-end gap-2 sm:hidden">
+                        <Badge aria-label={`${activity.acceptedCount} accepted`} className="min-w-6 px-1.5">
+                          {activity.acceptedCount}
+                        </Badge>
+                        <Badge
+                          variant="destructive"
+                          aria-label={`${activity.declinedCount} declined`}
+                          className="min-w-6 px-1.5"
+                        >
+                          {activity.declinedCount}
+                        </Badge>
+                        <Badge
+                          variant="secondary"
+                          aria-label={`${activity.openCount} open`}
+                          className="min-w-6 px-1.5"
+                        >
+                          {activity.openCount}
+                        </Badge>
+                      </div>
+                    </div>
                     {activity.description && (
                       <p className="text-sm text-muted-foreground">{activity.description}</p>
                     )}
                   </div>
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <div className="hidden items-center justify-end gap-2 sm:flex">
+                      <Badge aria-label={`${activity.acceptedCount} accepted`} className="min-w-6 px-1.5">
+                        {activity.acceptedCount}
+                      </Badge>
+                      <Badge
+                        variant="destructive"
+                        aria-label={`${activity.declinedCount} declined`}
+                        className="min-w-6 px-1.5"
+                      >
+                        {activity.declinedCount}
+                      </Badge>
+                      <Badge
+                        variant="secondary"
+                        aria-label={`${activity.openCount} open`}
+                        className="min-w-6 px-1.5"
+                      >
+                        {activity.openCount}
+                      </Badge>
+                    </div>
                     <span className="text-sm text-muted-foreground">
                       {new Date(activity.scheduledAt).toLocaleDateString('de-DE', {
                         day: '2-digit',

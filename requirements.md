@@ -39,6 +39,7 @@ Web application for organizing groups and shared activities. Users can create gr
 | Create activities for a group | ActivityController POST /api/activities | CreateActivityPage | Done |
 | Creating an activity automatically creates OPEN RSVPs for current group members | ActivityService + RsvpService | ActivityDetailPage RSVP list | Done |
 | Show right-aligned accepted, declined, and open RSVP count badges for upcoming activities in a group, with the badges in the mobile card's upper-right corner and before the date on larger screens | ActivityResponse counts + GroupDetailPage | GroupDetailPage | Done |
+| Show the same accepted, declined, and open RSVP count badges in the global activities list, with the badges in the mobile card's upper-right corner and before the date on larger screens | ActivityResponse counts + ActivityListPage | ActivityListPage | Done |
 | View upcoming activities for a group | ActivityController GET /api/groups/{id}/activities | GroupDetailPage / ActivityListPage | Done |
 | View activity details | ActivityController GET /api/activities/{id} | ActivityDetailPage | Done |
 | RSVP (accept / decline / open) | ActivityController PUT /api/activities/{id}/rsvps/me | ActivityDetailPage | Done |
