@@ -16,6 +16,7 @@ Web application for organizing groups and shared activities. Users can create gr
 | ToS acceptance at registration | @AssertTrue on tosAccepted | Checkbox + Zod literal(true) | Done |
 | Login / Logout | AuthController (JWT httpOnly cookie) | LoginPage + Navbar logout | Done |
 | JWT-based session (httpOnly cookie) | JwtService + JwtAuthenticationFilter + CookieService | Axios withCredentials | Done |
+| Seed basic test users for local development | Flyway migration inserts BCrypt test accounts | â€” | Done |
 
 ### 2. Group Management
 
@@ -79,7 +80,9 @@ Web application for organizing groups and shared activities. Users can create gr
 - **All pages completed:** LoginPage, RegisterPage, InvitePage, GroupListPage, CreateGroupPage, GroupDetailPage, ActivityListPage, CreateActivityPage, ActivityDetailPage, ProfilePage
 
 ### Infrastructure
-- docker-compose.yml (PostgreSQL 18 + Mailhog)
+- docker-compose.yml (PostgreSQL 16 + Mailhog)
+- Root .gitignore for IDE and local temp files
+- Root README.md with local setup and development notes
 
 ---
 
@@ -87,4 +90,3 @@ Web application for organizing groups and shared activities. Users can create gr
 
 ### Cleanup
 - Remove Vite boilerplate files (App.css, hero.png, react.svg, vite.svg, icons.svg)
-- Add .gitignore at root level

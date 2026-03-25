@@ -1,0 +1,19 @@
+# IDEs and editor metadata
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Local agent / assistant temp folders
+.codex-temp/
+.codey-temp/
+.claude/
+
+# OS and local noise
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+*.swo
