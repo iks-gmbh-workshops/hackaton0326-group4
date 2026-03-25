@@ -80,6 +80,18 @@ Key rules to always apply without re-reading:
 - Fonts: Segoe UI (body/UI), Merriweather Light Italic (headlines only)
 - Layout: left-aligned, generous whitespace, no justified text
 
+## Testing
+
+Every backend feature must include unit tests. Run with `./mvnw test` from `backend/`.
+
+- Tests mirror main source structure in `backend/src/test/java/com/drumdibum/`
+- Use JUnit 5 + Mockito (`@ExtendWith(MockitoExtension.class)`), not `@SpringBootTest`
+- Mock dependencies with `@Mock`, inject with `@InjectMocks`, assert with AssertJ
+- For `@Value` fields use `ReflectionTestUtils.setField()`
+- Test happy paths, not-found paths, authorization guards, and cascading deletes
+- Use `ArgumentCaptor` to verify saved entities, `verify(..., never())` on error paths
+- Test naming: `methodName_scenario_expectedBehavior` (e.g., `createGroup_userNotFound_throws`)
+
 ## Project Status
 
 See `requirements.md` for the full requirements and implementation status (what's done vs. still needs to be built).
