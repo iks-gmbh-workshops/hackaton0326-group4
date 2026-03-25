@@ -41,11 +41,13 @@ export interface ActivityResponse {
   createdAt: string;
 }
 
-export enum RsvpStatus {
-  ACCEPTED = 'ACCEPTED',
-  DECLINED = 'DECLINED',
-  OPEN = 'OPEN',
-}
+export const RsvpStatus = {
+  ACCEPTED: 'ACCEPTED',
+  DECLINED: 'DECLINED',
+  OPEN: 'OPEN',
+} as const;
+
+export type RsvpStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
 
 export interface RsvpResponse {
   userId: number;

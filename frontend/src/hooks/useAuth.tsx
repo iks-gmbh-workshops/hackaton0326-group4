@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { usersApi } from '@/api/users';
 import { authApi } from '@/api/auth';
@@ -26,9 +27,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
-    refreshUser().finally(() => setLoading(false));
+  const initializeAuth = useCallback(async () => {
+    try {
+      await refreshUser();
+    } finally {
+      setLoading(false);
+    }
   }, [refreshUser]);
+
+  useEffect(() => {
+    void initializeAuth();
+  }, [initializeAuth]);
 
   const login = useCallback(async (email: string, password: string) => {
     await authApi.login({ email, password });

@@ -39,8 +39,8 @@ export function ActivityListPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl">Upcoming Activities</h1>
-        <Button asChild>
-          <Link to="/activities/new">Create Activity</Link>
+        <Button render={<Link to="/activities/new" />}>
+          Create Activity
         </Button>
       </div>
 
