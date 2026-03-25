@@ -16,6 +16,7 @@ Web application for organizing groups and shared activities. Users can create gr
 | ToS acceptance at registration | @AssertTrue on tosAccepted | Checkbox + Zod literal(true) | Done |
 | Login / Logout | AuthController (JWT httpOnly cookie) | LoginPage + Navbar logout | Done |
 | JWT-based session (httpOnly cookie) | JwtService + JwtAuthenticationFilter + CookieService | Axios withCredentials | Done |
+| Seed basic test users for local development | Flyway migration inserts BCrypt test accounts | â€” | Done |
 
 ### 2. Group Management
 
