@@ -11,6 +11,7 @@ public interface RsvpRepository extends JpaRepository<Rsvp, Long> {
     List<Rsvp> findByActivityId(Long activityId);
     Optional<Rsvp> findByUserIdAndActivityId(Long userId, Long activityId);
     void deleteByUserId(Long userId);
+    void deleteByActivityId(Long activityId);
 
     @Modifying
     @Query("DELETE FROM Rsvp r WHERE r.user.id = :userId AND r.activity.group.id = :groupId")

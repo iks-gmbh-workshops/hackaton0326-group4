@@ -16,6 +16,7 @@ public class ActivityResponse {
     private String groupName;
     private String createdByEmail;
     private Instant scheduledAt;
+    private boolean canceled;
     private Instant createdAt;
 
     public static ActivityResponse from(Activity activity) {
@@ -27,6 +28,7 @@ public class ActivityResponse {
                 activity.getGroup().getName(),
                 activity.getCreatedBy().getEmail(),
                 activity.getScheduledAt(),
+                activity.isCanceled(),
                 activity.getCreatedAt());
     }
 }

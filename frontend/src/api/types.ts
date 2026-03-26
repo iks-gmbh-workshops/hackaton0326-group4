@@ -38,6 +38,7 @@ export interface ActivityResponse {
   groupName: string;
   createdByEmail: string;
   scheduledAt: string;
+  canceled: boolean;
   createdAt: string;
 }
 

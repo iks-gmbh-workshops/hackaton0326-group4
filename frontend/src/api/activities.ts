@@ -15,6 +15,9 @@ export const activitiesApi = {
   getActivity: (activityId: number) =>
     api.get<ActivityResponse>(`/activities/${activityId}`),
 
+  cancel: (activityId: number) =>
+    api.put(`/activities/${activityId}/cancel`),
+
   getRsvps: (activityId: number) =>
     api.get<RsvpResponse[]>(`/activities/${activityId}/rsvps`),
 

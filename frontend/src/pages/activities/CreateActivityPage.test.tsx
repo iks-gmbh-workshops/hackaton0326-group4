@@ -53,6 +53,7 @@ describe('CreateActivityPage', () => {
         groupName: 'Choir',
         createdByEmail: 'owner@example.com',
         scheduledAt: '2026-04-05T16:30:00.000Z',
+        canceled: false,
         createdAt: '2026-03-25T10:00:00Z',
       },
     } as AxiosResponse);

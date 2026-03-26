@@ -6,6 +6,7 @@ import com.drumdibum.activity.dto.RsvpRequest;
 import com.drumdibum.activity.dto.RsvpResponse;
 import com.drumdibum.exception.ResourceNotFoundException;
 import com.drumdibum.group.Group;
+import com.drumdibum.group.GroupMembership;
 import com.drumdibum.group.GroupMembershipRepository;
 import com.drumdibum.group.GroupRepository;
 import com.drumdibum.user.User;
@@ -15,7 +16,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.InOrder;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -41,6 +45,8 @@ class ActivityServiceTest {
     private GroupMembershipRepository membershipRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private JavaMailSender mailSender;
 
     @InjectMocks
     private ActivityService activityService;
@@ -72,6 +78,15 @@ class ActivityServiceTest {
                 .createdBy(user)
                 .scheduledAt(Instant.now().plus(7, ChronoUnit.DAYS))
                 .createdAt(Instant.now())
+                .build();
+    }
+
+    private User anotherUser(Long id, String email, String firstName, String lastName) {
+        return User.builder()
+                .id(id)
+                .email(email)
+                .firstName(firstName)
+                .lastName(lastName)
                 .build();
     }
 
@@ -165,7 +180,7 @@ class ActivityServiceTest {
         Activity activity = testActivity(user, group);
 
         when(groupRepository.findById(10L)).thenReturn(Optional.of(group));
-        when(activityRepository.findByGroupIdAndScheduledAtAfterOrderByScheduledAtAsc(eq(10L), any(Instant.class)))
+        when(activityRepository.findByGroupIdAndCanceledFalseAndScheduledAtAfterOrderByScheduledAtAsc(eq(10L), any(Instant.class)))
                 .thenReturn(List.of(activity));
 
         List<ActivityResponse> activities = activityService.getUpcomingActivities(10L);
@@ -187,7 +202,7 @@ class ActivityServiceTest {
     void getUpcomingActivities_noActivities_returnsEmpty() {
         Group group = testGroup(testUser());
         when(groupRepository.findById(10L)).thenReturn(Optional.of(group));
-        when(activityRepository.findByGroupIdAndScheduledAtAfterOrderByScheduledAtAsc(eq(10L), any()))
+        when(activityRepository.findByGroupIdAndCanceledFalseAndScheduledAtAfterOrderByScheduledAtAsc(eq(10L), any()))
                 .thenReturn(List.of());
 
         List<ActivityResponse> activities = activityService.getUpcomingActivities(10L);
@@ -217,6 +232,112 @@ class ActivityServiceTest {
         assertThatThrownBy(() -> activityService.getActivity(999L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Activity not found");
+    }
+
+    // --- cancelActivity ---
+
+    @Test
+    void cancelActivity_success_marksActivityCanceledAndEmailsActiveMembers() {
+        User canceler = testUser();
+        User activeMember = anotherUser(2L, "jamie@example.com", "Jamie", "Stone");
+        User inactiveMember = anotherUser(3L, "sam@example.com", "Sam", "Lee");
+        Group group = testGroup(canceler);
+        Activity activity = testActivity(canceler, group);
+
+        GroupMembership cancelerMembership = GroupMembership.builder()
+                .id(1L)
+                .user(canceler)
+                .group(group)
+                .status(GroupMembership.MembershipStatus.ACTIVE)
+                .build();
+        GroupMembership activeMembership = GroupMembership.builder()
+                .id(2L)
+                .user(activeMember)
+                .group(group)
+                .status(GroupMembership.MembershipStatus.ACTIVE)
+                .build();
+        GroupMembership inactiveMembership = GroupMembership.builder()
+                .id(3L)
+                .user(inactiveMember)
+                .group(group)
+                .status(GroupMembership.MembershipStatus.INACTIVE)
+                .build();
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(canceler));
+        when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
+        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(true);
+        when(membershipRepository.findByGroupId(10L))
+                .thenReturn(List.of(cancelerMembership, activeMembership, inactiveMembership));
+        when(activityRepository.save(activity)).thenReturn(activity);
+
+        activityService.cancelActivity("test@example.com", 100L);
+
+        InOrder inOrder = inOrder(activityRepository, membershipRepository);
+        inOrder.verify(activityRepository).save(activity);
+        inOrder.verify(membershipRepository).findByGroupId(10L);
+        assertThat(activity.isCanceled()).isTrue();
+
+        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender, times(2)).send(captor.capture());
+
+        List<SimpleMailMessage> messages = captor.getAllValues();
+        assertThat(messages).extracting(SimpleMailMessage::getTo)
+                .containsExactlyInAnyOrder(new String[]{"test@example.com"}, new String[]{"jamie@example.com"});
+        assertThat(messages).allSatisfy(message -> {
+            assertThat(message.getSubject()).isEqualTo("Activity canceled in Test Group");
+            assertThat(message.getText()).contains("Test Activity");
+            assertThat(message.getText()).contains("John Doe");
+        });
+    }
+
+    @Test
+    void cancelActivity_alreadyCanceled_throws() {
+        User user = testUser();
+        Group group = testGroup(user);
+        Activity activity = testActivity(user, group);
+        activity.setCanceled(true);
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
+        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(true);
+
+        assertThatThrownBy(() -> activityService.cancelActivity("test@example.com", 100L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Activity has already been canceled");
+
+        verify(activityRepository, never()).save(any());
+        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void cancelActivity_notMember_throws() {
+        User user = testUser();
+        Group group = testGroup(user);
+        Activity activity = testActivity(user, group);
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
+        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(false);
+
+        assertThatThrownBy(() -> activityService.cancelActivity("test@example.com", 100L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("You are not a member of this group");
+
+        verify(activityRepository, never()).save(any());
+        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void cancelActivity_activityNotFound_throws() {
+        User user = testUser();
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(activityRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> activityService.cancelActivity("test@example.com", 999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Activity not found");
+
+        verify(mailSender, never()).send(any(SimpleMailMessage.class));
     }
 
     // --- getRsvps ---
@@ -315,6 +436,27 @@ class ActivityServiceTest {
         assertThatThrownBy(() -> activityService.updateRsvp("test@example.com", 100L, req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("You are not a member of this group");
+
+        verify(rsvpRepository, never()).save(any());
+    }
+
+    @Test
+    void updateRsvp_canceledActivity_throws() {
+        User user = testUser();
+        Group group = testGroup(user);
+        Activity activity = testActivity(user, group);
+        activity.setCanceled(true);
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
+        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(true);
+
+        RsvpRequest req = new RsvpRequest();
+        req.setStatus(Rsvp.RsvpStatus.ACCEPTED);
+
+        assertThatThrownBy(() -> activityService.updateRsvp("test@example.com", 100L, req))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Canceled activities cannot be updated");
 
         verify(rsvpRepository, never()).save(any());
     }
