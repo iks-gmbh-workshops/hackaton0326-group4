@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { groupsApi } from '@/api/groups';
 import { activitiesApi } from '@/api/activities';
+import { GroupRole } from '@/api/types';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +38,8 @@ export function GroupDetailPage() {
   const [inviteSuccess, setInviteSuccess] = useState('');
   const [inviteError, setInviteError] = useState('');
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [kickUserId, setKickUserId] = useState<number | null>(null);
 
   const id = Number(groupId);
 
@@ -54,6 +57,11 @@ export function GroupDetailPage() {
     queryKey: ['group', id, 'activities'],
     queryFn: () => activitiesApi.getUpcoming(id).then((r) => r.data),
   });
+
+  const currentMember = members?.find((m) => m.email === user?.email);
+  const isAdmin = currentMember?.role === GroupRole.ADMIN;
+  const adminCount = members?.filter((m) => m.role === GroupRole.ADMIN).length ?? 0;
+  const isLastAdmin = isAdmin && adminCount <= 1;
 
   const inviteMutation = useMutation({
     mutationFn: (data: InviteForm) => groupsApi.invite(id, data),
@@ -73,6 +81,31 @@ export function GroupDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });
       navigate('/groups');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => groupsApi.deleteGroup(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+      navigate('/groups');
+    },
+  });
+
+  const kickMutation = useMutation({
+    mutationFn: (userId: number) => groupsApi.kickMember(id, userId),
+    onSuccess: () => {
+      setKickUserId(null);
+      queryClient.invalidateQueries({ queryKey: ['group', id, 'members'] });
+      queryClient.invalidateQueries({ queryKey: ['group', id] });
+    },
+  });
+
+  const roleMutation = useMutation({
+    mutationFn: ({ userId, role }: { userId: number; role: GroupRole }) =>
+      groupsApi.changeRole(id, userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['group', id, 'members'] });
     },
   });
 
@@ -101,31 +134,62 @@ export function GroupDetailPage() {
             Created by {group.createdByEmail}
           </p>
         </div>
-        <Dialog open={leaveOpen} onOpenChange={setLeaveOpen}>
-          <DialogTrigger render={<Button variant="outline" className="text-destructive border-destructive" />}>
-            Leave Group
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Leave group?</DialogTitle>
-              <DialogDescription>
-                You will be removed from this group and your RSVPs for its activities will be deleted. This cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setLeaveOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => leaveMutation.mutate()}
-                disabled={leaveMutation.isPending}
-              >
-                {leaveMutation.isPending ? 'Leaving...' : 'Leave Group'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          {isAdmin && (
+            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+              <DialogTrigger render={<Button variant="destructive" />}>
+                Delete Group
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete group?</DialogTitle>
+                  <DialogDescription>
+                    This will permanently delete the group, all its activities, RSVPs, and invitations. This cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => deleteMutation.mutate()}
+                    disabled={deleteMutation.isPending}
+                  >
+                    {deleteMutation.isPending ? 'Deleting...' : 'Delete Group'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+          <Dialog open={leaveOpen} onOpenChange={setLeaveOpen}>
+            <DialogTrigger render={<Button variant="outline" className="text-destructive border-destructive" />}>
+              Leave Group
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Leave group?</DialogTitle>
+                <DialogDescription>
+                  {isLastAdmin
+                    ? 'You are the last admin. Leaving will permanently delete the group and all its data.'
+                    : 'You will be removed from this group and your RSVPs for its activities will be deleted. This cannot be undone.'}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setLeaveOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => leaveMutation.mutate()}
+                  disabled={leaveMutation.isPending}
+                >
+                  {leaveMutation.isPending ? 'Leaving...' : 'Leave Group'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Separator />
@@ -138,67 +202,125 @@ export function GroupDetailPage() {
             <Badge variant="secondary">{members?.length ?? 0}</Badge>
           </div>
           <div className="space-y-2">
-            {members?.map((member) => (
-              <div
-                key={member.userId}
-                className="flex items-center justify-between rounded-md border px-4 py-2"
-              >
-                <div>
-                  <p className="font-medium">
-                    {member.firstName} {member.lastName}
-                    {member.email === user?.email && (
-                      <span className="ml-2 text-xs text-muted-foreground">(you)</span>
+            {members?.map((member) => {
+              const isSelf = member.email === user?.email;
+              const memberKickOpen = kickUserId === member.userId;
+              return (
+                <div
+                  key={member.userId}
+                  className="flex items-center justify-between rounded-md border px-4 py-2"
+                >
+                  <div>
+                    <p className="font-medium">
+                      {member.firstName} {member.lastName}
+                      {isSelf && (
+                        <span className="ml-2 text-xs text-muted-foreground">(you)</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{member.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={member.role === GroupRole.ADMIN ? 'default' : 'secondary'}>
+                      {member.role === GroupRole.ADMIN ? 'Admin' : 'Member'}
+                    </Badge>
+                    {isAdmin && !isSelf && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={roleMutation.isPending}
+                          onClick={() =>
+                            roleMutation.mutate({
+                              userId: member.userId,
+                              role: member.role === GroupRole.ADMIN ? GroupRole.MEMBER : GroupRole.ADMIN,
+                            })
+                          }
+                        >
+                          {member.role === GroupRole.ADMIN ? 'Demote' : 'Promote'}
+                        </Button>
+                        <Dialog
+                          open={memberKickOpen}
+                          onOpenChange={(open) => setKickUserId(open ? member.userId : null)}
+                        >
+                          <DialogTrigger render={<Button variant="outline" size="sm" className="text-destructive border-destructive" />}>
+                            Kick
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Kick {member.firstName} {member.lastName}?</DialogTitle>
+                              <DialogDescription>
+                                This will remove them from the group and delete their RSVPs.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setKickUserId(null)}>
+                                Cancel
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                onClick={() => kickMutation.mutate(member.userId)}
+                                disabled={kickMutation.isPending}
+                              >
+                                {kickMutation.isPending ? 'Kicking...' : 'Kick'}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </>
                     )}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{member.email}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Invite form */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <h3 className="text-base">Invite a member</h3>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form
-                onSubmit={handleSubmit((data) => inviteMutation.mutate(data))}
-                className="space-y-3"
-              >
-                {inviteSuccess && (
-                  <p className="text-sm text-accent">{inviteSuccess}</p>
-                )}
-                {inviteError && (
-                  <p className="text-sm text-destructive">{inviteError}</p>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="inviteEmail">Email address</Label>
-                  <Input id="inviteEmail" type="email" {...register('email')} />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email.message}</p>
+          {/* Invite form — admin only */}
+          {isAdmin && (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <h3 className="text-base">Invite a member</h3>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form
+                  onSubmit={handleSubmit((data) => inviteMutation.mutate(data))}
+                  className="space-y-3"
+                >
+                  {inviteSuccess && (
+                    <p className="text-sm text-accent">{inviteSuccess}</p>
                   )}
-                </div>
-                <Button type="submit" disabled={inviteMutation.isPending}>
-                  {inviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                  {inviteError && (
+                    <p className="text-sm text-destructive">{inviteError}</p>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="inviteEmail">Email address</Label>
+                    <Input id="inviteEmail" type="email" {...register('email')} />
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email.message}</p>
+                    )}
+                  </div>
+                  <Button type="submit" disabled={inviteMutation.isPending}>
+                    {inviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          )}
         </section>
 
         {/* Activities section */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl">Upcoming Activities</h2>
-            <Button
-              size="sm"
-              render={<Link to={`/activities/new?groupId=${id}`} />}
-            >
-              New Activity
-            </Button>
+            {isAdmin && (
+              <Button
+                size="sm"
+                render={<Link to={`/activities/new?groupId=${id}`} />}
+              >
+                New Activity
+              </Button>
+            )}
           </div>
 
           {!activities?.length && (

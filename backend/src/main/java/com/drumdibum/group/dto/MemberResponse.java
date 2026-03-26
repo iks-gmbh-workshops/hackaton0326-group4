@@ -14,6 +14,7 @@ public class MemberResponse {
     private String firstName;
     private String lastName;
     private String status;
+    private String role;
     private Instant joinedAt;
 
     public static MemberResponse from(GroupMembership membership) {
@@ -24,6 +25,7 @@ public class MemberResponse {
                 user.getFirstName(),
                 user.getLastName(),
                 membership.getStatus().name(),
+                membership.getRole().name(),
                 membership.getJoinedAt());
     }
 }

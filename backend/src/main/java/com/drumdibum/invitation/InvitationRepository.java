@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface InvitationRepository extends JpaRepository<InvitationToken, Long> {
     Optional<InvitationToken> findByToken(String token);
+    void deleteByGroupId(Long groupId);
 }

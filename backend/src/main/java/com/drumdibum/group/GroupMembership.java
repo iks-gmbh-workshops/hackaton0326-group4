@@ -33,6 +33,11 @@ public class GroupMembership {
     @Column(nullable = false)
     private MembershipStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(nullable = false)
+    private GroupRole role = GroupRole.MEMBER;
+
     @Column(nullable = false, updatable = false)
     private Instant joinedAt;
 
@@ -43,5 +48,9 @@ public class GroupMembership {
 
     public enum MembershipStatus {
         ACTIVE, INACTIVE
+    }
+
+    public enum GroupRole {
+        ADMIN, MEMBER
     }
 }

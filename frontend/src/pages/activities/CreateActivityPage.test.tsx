@@ -5,11 +5,18 @@ import type { AxiosResponse } from 'axios';
 import { CreateActivityPage } from '@/pages/activities/CreateActivityPage';
 import { activitiesApi } from '@/api/activities';
 import { groupsApi } from '@/api/groups';
+import { GroupRole } from '@/api/types';
+import { useAuth } from '@/hooks/useAuth';
 import { renderWithProviders } from '@/test/test-utils';
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: vi.fn(),
+}));
 
 vi.mock('@/api/groups', () => ({
   groupsApi: {
     getMyGroups: vi.fn(),
+    getMembers: vi.fn(),
   },
 }));
 
@@ -20,10 +27,25 @@ vi.mock('@/api/activities', () => ({
 }));
 
 const mockedGetMyGroups = vi.mocked(groupsApi.getMyGroups);
+const mockedGetMembers = vi.mocked(groupsApi.getMembers);
 const mockedCreate = vi.mocked(activitiesApi.create);
+const mockedUseAuth = vi.mocked(useAuth);
 
 describe('CreateActivityPage', () => {
   it('preselects the group from the query string and creates an activity', async () => {
+    mockedUseAuth.mockReturnValue({
+      user: {
+        id: 1,
+        email: 'alex@example.com',
+        firstName: 'Alex',
+        lastName: 'Miller',
+        createdAt: '2026-03-25T10:00:00Z',
+      },
+      loading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+      refreshUser: vi.fn(),
+    });
     mockedGetMyGroups.mockResolvedValue({
       data: [
         {
@@ -44,6 +66,31 @@ describe('CreateActivityPage', () => {
         },
       ],
     } as AxiosResponse);
+    mockedGetMembers.mockImplementation(async (groupId: number) => ({
+      data: groupId === 7
+        ? [
+            {
+              userId: 1,
+              email: 'alex@example.com',
+              firstName: 'Alex',
+              lastName: 'Miller',
+              status: 'ACTIVE',
+              role: GroupRole.ADMIN,
+              joinedAt: '2026-03-25T10:00:00Z',
+            },
+          ]
+        : [
+            {
+              userId: 1,
+              email: 'alex@example.com',
+              firstName: 'Alex',
+              lastName: 'Miller',
+              status: 'ACTIVE',
+              role: GroupRole.MEMBER,
+              joinedAt: '2026-03-25T10:00:00Z',
+            },
+          ],
+    }) as AxiosResponse);
     mockedCreate.mockResolvedValue({
       data: {
         id: 77,
@@ -86,6 +133,19 @@ describe('CreateActivityPage', () => {
   });
 
   it('shows a submission error when activity creation fails', async () => {
+    mockedUseAuth.mockReturnValue({
+      user: {
+        id: 1,
+        email: 'alex@example.com',
+        firstName: 'Alex',
+        lastName: 'Miller',
+        createdAt: '2026-03-25T10:00:00Z',
+      },
+      loading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+      refreshUser: vi.fn(),
+    });
     mockedGetMyGroups.mockResolvedValue({
       data: [
         {
@@ -95,6 +155,19 @@ describe('CreateActivityPage', () => {
           createdByEmail: 'owner@example.com',
           createdAt: '2026-03-25T10:00:00Z',
           memberCount: 5,
+        },
+      ],
+    } as AxiosResponse);
+    mockedGetMembers.mockResolvedValue({
+      data: [
+        {
+          userId: 1,
+          email: 'alex@example.com',
+          firstName: 'Alex',
+          lastName: 'Miller',
+          status: 'ACTIVE',
+          role: GroupRole.ADMIN,
+          joinedAt: '2026-03-25T10:00:00Z',
         },
       ],
     } as AxiosResponse);

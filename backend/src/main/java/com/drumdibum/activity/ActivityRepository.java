@@ -14,4 +14,6 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     @Modifying
     @Query("DELETE FROM Activity a WHERE a.createdBy.id = :userId")
     void deleteByCreatedById(Long userId);
+
+    void deleteByGroupId(Long groupId);
 }

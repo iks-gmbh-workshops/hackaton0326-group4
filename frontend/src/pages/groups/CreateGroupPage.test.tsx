@@ -45,7 +45,7 @@ describe('CreateGroupPage', () => {
         description: 'Weekly rehearsal',
       });
     });
-    expect(screen.getByText('Group Detail Page')).toBeInTheDocument();
+    expect(await screen.findByText('Group Detail Page')).toBeInTheDocument();
   });
 
   it('shows a submission error when group creation fails', async () => {

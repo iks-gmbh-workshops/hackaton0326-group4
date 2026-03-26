@@ -66,6 +66,24 @@ class InvitationServiceTest {
                 .build();
     }
 
+    private GroupMembership adminMembership(User user, Group group) {
+        return GroupMembership.builder()
+                .id(1L).user(user).group(group)
+                .status(GroupMembership.MembershipStatus.ACTIVE)
+                .role(GroupMembership.GroupRole.ADMIN)
+                .joinedAt(Instant.now())
+                .build();
+    }
+
+    private GroupMembership memberMembership(User user, Group group) {
+        return GroupMembership.builder()
+                .id(1L).user(user).group(group)
+                .status(GroupMembership.MembershipStatus.ACTIVE)
+                .role(GroupMembership.GroupRole.MEMBER)
+                .joinedAt(Instant.now())
+                .build();
+    }
+
     private void setConfigValues() {
         ReflectionTestUtils.setField(invitationService, "frontendUrl", "http://localhost:5173");
         ReflectionTestUtils.setField(invitationService, "invitationExpirationHours", 48L);
@@ -80,7 +98,7 @@ class InvitationServiceTest {
         Group group = testGroup(inviter);
         when(userRepository.findByEmail("inviter@example.com")).thenReturn(Optional.of(inviter));
         when(groupRepository.findById(10L)).thenReturn(Optional.of(group));
-        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(true);
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(adminMembership(inviter, group)));
         when(invitationRepository.save(any(InvitationToken.class))).thenAnswer(inv -> {
             InvitationToken t = inv.getArgument(0);
             t.setId(1L);
@@ -108,7 +126,7 @@ class InvitationServiceTest {
         Group group = testGroup(inviter);
         when(userRepository.findByEmail("inviter@example.com")).thenReturn(Optional.of(inviter));
         when(groupRepository.findById(10L)).thenReturn(Optional.of(group));
-        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(true);
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(adminMembership(inviter, group)));
         when(invitationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         InviteRequest req = new InviteRequest();
@@ -132,7 +150,7 @@ class InvitationServiceTest {
         Group group = testGroup(inviter);
         when(userRepository.findByEmail("inviter@example.com")).thenReturn(Optional.of(inviter));
         when(groupRepository.findById(10L)).thenReturn(Optional.of(group));
-        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(true);
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(adminMembership(inviter, group)));
         when(invitationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         InviteRequest req = new InviteRequest();
@@ -152,7 +170,7 @@ class InvitationServiceTest {
         Group group = testGroup(inviter);
         when(userRepository.findByEmail("inviter@example.com")).thenReturn(Optional.of(inviter));
         when(groupRepository.findById(10L)).thenReturn(Optional.of(group));
-        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(false);
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.empty());
 
         InviteRequest req = new InviteRequest();
         req.setEmail("invited@example.com");
@@ -160,6 +178,25 @@ class InvitationServiceTest {
         assertThatThrownBy(() -> invitationService.createInvitation("inviter@example.com", 10L, req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("You are not a member of this group");
+
+        verify(invitationRepository, never()).save(any());
+        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void createInvitation_asMember_throws() {
+        User inviter = testUser();
+        Group group = testGroup(inviter);
+        when(userRepository.findByEmail("inviter@example.com")).thenReturn(Optional.of(inviter));
+        when(groupRepository.findById(10L)).thenReturn(Optional.of(group));
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(memberMembership(inviter, group)));
+
+        InviteRequest req = new InviteRequest();
+        req.setEmail("invited@example.com");
+
+        assertThatThrownBy(() -> invitationService.createInvitation("inviter@example.com", 10L, req))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Only admins can invite members");
 
         verify(invitationRepository, never()).save(any());
         verify(mailSender, never()).send(any(SimpleMailMessage.class));
@@ -219,6 +256,7 @@ class InvitationServiceTest {
         assertThat(captor.getValue().getUser()).isEqualTo(user);
         assertThat(captor.getValue().getGroup()).isEqualTo(group);
         assertThat(captor.getValue().getStatus()).isEqualTo(GroupMembership.MembershipStatus.ACTIVE);
+        assertThat(captor.getValue().getRole()).isEqualTo(GroupMembership.GroupRole.MEMBER);
 
         verify(rsvpService).createOpenRsvpsForUserInGroup(user, group);
         assertThat(token.isUsed()).isTrue();

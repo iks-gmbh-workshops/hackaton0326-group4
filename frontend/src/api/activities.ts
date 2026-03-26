@@ -15,6 +15,12 @@ export const activitiesApi = {
   getActivity: (activityId: number) =>
     api.get<ActivityResponse>(`/activities/${activityId}`),
 
+  update: (activityId: number, data: {
+    title?: string;
+    description?: string;
+    scheduledAt?: string;
+  }) => api.put<ActivityResponse>(`/activities/${activityId}`, data),
+
   cancel: (activityId: number) =>
     api.put(`/activities/${activityId}/cancel`),
 

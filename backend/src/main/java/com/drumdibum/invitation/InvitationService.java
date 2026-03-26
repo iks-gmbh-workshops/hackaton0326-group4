@@ -44,8 +44,10 @@ public class InvitationService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Group not found"));
 
-        if (!membershipRepository.existsByUserIdAndGroupId(inviter.getId(), groupId)) {
-            throw new IllegalArgumentException("You are not a member of this group");
+        GroupMembership inviterMembership = membershipRepository.findByUserIdAndGroupId(inviter.getId(), groupId)
+                .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
+        if (inviterMembership.getRole() != GroupMembership.GroupRole.ADMIN) {
+            throw new IllegalArgumentException("Only admins can invite members");
         }
 
         InvitationToken invitation = InvitationToken.builder()
@@ -85,6 +87,7 @@ public class InvitationService {
                     .user(user)
                     .group(invitation.getGroup())
                     .status(GroupMembership.MembershipStatus.ACTIVE)
+                    .role(GroupMembership.GroupRole.MEMBER)
                     .build();
             membershipRepository.save(membership);
         }

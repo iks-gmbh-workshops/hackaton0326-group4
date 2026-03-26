@@ -33,6 +33,13 @@ public class ActivityController {
         return ResponseEntity.ok(activityService.getActivity(activityId));
     }
 
+    @PutMapping("/activities/{activityId}")
+    public ResponseEntity<ActivityResponse> updateActivity(@AuthenticationPrincipal UserDetails userDetails,
+                                                            @PathVariable Long activityId,
+                                                            @Valid @RequestBody UpdateActivityRequest request) {
+        return ResponseEntity.ok(activityService.updateActivity(userDetails.getUsername(), activityId, request));
+    }
+
     @PutMapping("/activities/{activityId}/cancel")
     public ResponseEntity<Void> cancelActivity(@AuthenticationPrincipal UserDetails userDetails,
                                                @PathVariable Long activityId) {

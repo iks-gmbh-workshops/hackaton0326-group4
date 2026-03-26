@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
 import { activitiesApi } from '@/api/activities';
 import { groupsApi } from '@/api/groups';
+import { GroupRole } from '@/api/types';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,11 +27,36 @@ export function CreateActivityPage() {
   const [searchParams] = useSearchParams();
   const preselectedGroupId = searchParams.get('groupId');
   const [error, setError] = useState('');
+  const { user } = useAuth();
 
   const { data: groups } = useQuery({
     queryKey: ['groups'],
     queryFn: () => groupsApi.getMyGroups().then((r) => r.data),
   });
+
+  // Fetch members for all groups to determine admin status
+  const { data: membersByGroup } = useQuery({
+    queryKey: ['groups', 'members', groups?.map((g) => g.id)],
+    queryFn: async () => {
+      if (!groups?.length) return {};
+      const results = await Promise.all(
+        groups.map(async (g) => {
+          const res = await groupsApi.getMembers(g.id);
+          return { groupId: g.id, members: res.data };
+        }),
+      );
+      return Object.fromEntries(results.map((r) => [r.groupId, r.members]));
+    },
+    enabled: !!groups,
+  });
+
+  const adminGroups = useMemo(() => {
+    if (!groups || !membersByGroup) return [];
+    return groups.filter((g) => {
+      const members = membersByGroup[g.id];
+      return members?.some((m) => m.email === user?.email && m.role === GroupRole.ADMIN);
+    });
+  }, [groups, membersByGroup, user?.email]);
 
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -39,10 +66,10 @@ export function CreateActivityPage() {
   });
 
   useEffect(() => {
-    if (preselectedGroupId && groups?.some((group) => group.id === Number(preselectedGroupId))) {
+    if (preselectedGroupId && adminGroups.some((group) => group.id === Number(preselectedGroupId))) {
       setValue('groupId', Number(preselectedGroupId));
     }
-  }, [groups, preselectedGroupId, setValue]);
+  }, [adminGroups, preselectedGroupId, setValue]);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -83,7 +110,7 @@ export function CreateActivityPage() {
                 })}
               >
                 <option value="">Select a group</option>
-                {groups?.map((g) => (
+                {adminGroups.map((g) => (
                   <option key={g.id} value={g.id}>
                     {g.name}
                   </option>
