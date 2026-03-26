@@ -18,9 +18,18 @@ const registerSchema = z.object({
     .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
     .regex(/\d/, 'Must contain at least one digit')
     .refine((value) => /[\p{P}\p{S}]/u.test(value), 'Must contain at least one special character'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   tosAccepted: z.literal(true, { error: 'You must accept the terms of service' }),
+}).superRefine(({ password, confirmPassword }, ctx) => {
+  if (confirmPassword && password !== confirmPassword) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['confirmPassword'],
+      message: 'Passwords do not match',
+    });
+  }
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
@@ -33,10 +42,10 @@ export function RegisterPage() {
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { tosAccepted: false as unknown as true },
+    defaultValues: { confirmPassword: '', tosAccepted: false as unknown as true },
   });
 
-  const onSubmit = async (data: RegisterForm) => {
+  const onSubmit = async ({ confirmPassword: _confirmPassword, ...data }: RegisterForm) => {
     try {
       setError('');
       await authApi.register({ ...data, tosAccepted: true });
@@ -89,6 +98,12 @@ export function RegisterPage() {
               <p className="text-xs text-muted-foreground">
                 At least 10 characters with uppercase, lowercase, digit, and special character.
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <Input id="confirmPassword" type="password" {...register('confirmPassword')} />
+              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
             </div>
 
             <div className="flex items-start gap-2">
