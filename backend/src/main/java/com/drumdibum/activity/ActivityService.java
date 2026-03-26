@@ -93,24 +93,6 @@ public class ActivityService {
         sendCancellationEmails(activity, user);
     }
 
-    @Transactional
-    public void cancelActivity(String email, Long activityId) {
-        User user = findUserByEmail(email);
-        Activity activity = findActivityById(activityId);
-
-        if (!membershipRepository.existsByUserIdAndGroupId(user.getId(), activity.getGroup().getId())) {
-            throw new IllegalArgumentException("You are not a member of this group");
-        }
-
-        if (activity.isCanceled()) {
-            throw new IllegalArgumentException("Activity has already been canceled");
-        }
-
-        activity.setCanceled(true);
-        activityRepository.save(activity);
-        sendCancellationEmails(activity, user);
-    }
-
     @Transactional(readOnly = true)
     public List<RsvpResponse> getRsvps(Long activityId) {
         findActivityById(activityId);
