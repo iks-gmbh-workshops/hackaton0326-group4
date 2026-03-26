@@ -1,5 +1,6 @@
 package com.drumdibum.invitation;
 
+import com.drumdibum.activity.RsvpService;
 import com.drumdibum.exception.ResourceNotFoundException;
 import com.drumdibum.group.Group;
 import com.drumdibum.group.GroupMembership;
@@ -41,6 +42,8 @@ class InvitationServiceTest {
     private UserRepository userRepository;
     @Mock
     private JavaMailSender mailSender;
+    @Mock
+    private RsvpService rsvpService;
 
     @InjectMocks
     private InvitationService invitationService;
@@ -217,6 +220,7 @@ class InvitationServiceTest {
         assertThat(captor.getValue().getGroup()).isEqualTo(group);
         assertThat(captor.getValue().getStatus()).isEqualTo(GroupMembership.MembershipStatus.ACTIVE);
 
+        verify(rsvpService).createOpenRsvpsForUserInGroup(user, group);
         assertThat(token.isUsed()).isTrue();
         verify(invitationRepository).save(token);
     }
@@ -241,6 +245,7 @@ class InvitationServiceTest {
         invitationService.acceptInvitation("valid-token");
 
         verify(membershipRepository, never()).save(any());
+        verify(rsvpService).createOpenRsvpsForUserInGroup(user, group);
         assertThat(token.isUsed()).isTrue();
         verify(invitationRepository).save(token);
     }

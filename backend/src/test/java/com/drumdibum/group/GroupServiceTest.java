@@ -1,6 +1,7 @@
 package com.drumdibum.group;
 
 import com.drumdibum.activity.RsvpRepository;
+import com.drumdibum.activity.RsvpService;
 import com.drumdibum.exception.ResourceNotFoundException;
 import com.drumdibum.group.dto.CreateGroupRequest;
 import com.drumdibum.group.dto.GroupResponse;
@@ -35,6 +36,8 @@ class GroupServiceTest {
     private UserRepository userRepository;
     @Mock
     private RsvpRepository rsvpRepository;
+    @Mock
+    private RsvpService rsvpService;
 
     @InjectMocks
     private GroupService groupService;
@@ -90,6 +93,7 @@ class GroupServiceTest {
         GroupMembership membership = captor.getValue();
         assertThat(membership.getUser()).isEqualTo(user);
         assertThat(membership.getStatus()).isEqualTo(GroupMembership.MembershipStatus.ACTIVE);
+        verify(rsvpService).createOpenRsvpsForUserInGroup(eq(user), any(Group.class));
     }
 
     @Test
