@@ -76,7 +76,10 @@ Web application for organizing groups and shared activities. Users can create gr
 - Router setup with protected routes
 - Navbar with links to Groups, Activities, Profile
 - All pages completed: LoginPage, RegisterPage, InvitePage, GroupListPage, CreateGroupPage, GroupDetailPage, ActivityListPage, CreateActivityPage, ActivityDetailPage, ProfilePage
-tignore for IDE and local temp files
+
+### Infrastructure
+- docker-compose.yml (PostgreSQL 16 + Mailhog)
+- Root .gitignore for IDE and local temp files
 - Root README.md with local setup and development notes
 
 ---

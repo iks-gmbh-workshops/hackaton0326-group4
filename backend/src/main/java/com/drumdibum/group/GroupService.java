@@ -1,6 +1,7 @@
 package com.drumdibum.group;
 
 import com.drumdibum.activity.RsvpRepository;
+import com.drumdibum.activity.RsvpService;
 import com.drumdibum.exception.ResourceNotFoundException;
 import com.drumdibum.group.dto.CreateGroupRequest;
 import com.drumdibum.group.dto.GroupResponse;
@@ -21,6 +22,7 @@ public class GroupService {
     private final GroupMembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final RsvpRepository rsvpRepository;
+    private final RsvpService rsvpService;
 
     @Transactional
     public GroupResponse createGroup(String email, CreateGroupRequest request) {
@@ -39,6 +41,7 @@ public class GroupService {
                 .status(GroupMembership.MembershipStatus.ACTIVE)
                 .build();
         membershipRepository.save(membership);
+        rsvpService.createOpenRsvpsForUserInGroup(user, group);
 
         return GroupResponse.from(group, 1);
     }

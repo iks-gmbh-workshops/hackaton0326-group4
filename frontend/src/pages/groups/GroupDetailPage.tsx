@@ -214,17 +214,38 @@ export function GroupDetailPage() {
               >
                 <Card className="transition hover:border-accent">
                   <CardContent className="py-4">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-iks-dark-blue">{activity.title}</p>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(activity.scheduledAt).toLocaleDateString('de-DE', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="min-w-0 flex-1 font-medium text-iks-dark-blue">{activity.title}</p>
+                      <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+                        <div className="flex items-center justify-end gap-2">
+                          <Badge aria-label={`${activity.acceptedCount} accepted`} className="min-w-6 px-1.5">
+                            {activity.acceptedCount}
+                          </Badge>
+                          <Badge
+                            variant="destructive"
+                            aria-label={`${activity.declinedCount} declined`}
+                            className="min-w-6 px-1.5"
+                          >
+                            {activity.declinedCount}
+                          </Badge>
+                          <Badge
+                            variant="secondary"
+                            aria-label={`${activity.openCount} open`}
+                            className="min-w-6 px-1.5"
+                          >
+                            {activity.openCount}
+                          </Badge>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(activity.scheduledAt).toLocaleDateString('de-DE', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
                     </div>
                     {activity.description && (
                       <p className="mt-1 text-sm text-muted-foreground">
