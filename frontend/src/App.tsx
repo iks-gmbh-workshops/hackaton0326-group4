@@ -5,6 +5,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { RegisterPage } from '@/pages/auth/RegisterPage';
+import { TermsOfServicePage } from '@/pages/auth/TermsOfServicePage';
 import { GroupListPage } from '@/pages/groups/GroupListPage';
 import { GroupDetailPage } from '@/pages/groups/GroupDetailPage';
 import { CreateGroupPage } from '@/pages/groups/CreateGroupPage';
@@ -35,6 +36,7 @@ function App() {
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
 
               {/* Protected routes */}
