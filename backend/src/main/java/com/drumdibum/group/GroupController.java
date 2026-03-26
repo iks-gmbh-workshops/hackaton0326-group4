@@ -1,5 +1,6 @@
 package com.drumdibum.group;
 
+import com.drumdibum.group.dto.ChangeRoleRequest;
 import com.drumdibum.group.dto.CreateGroupRequest;
 import com.drumdibum.group.dto.GroupResponse;
 import com.drumdibum.group.dto.MemberResponse;
@@ -45,5 +46,28 @@ public class GroupController {
                                             @PathVariable Long groupId) {
         groupService.leaveGroup(userDetails.getUsername(), groupId);
         return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{groupId}")
+    public ResponseEntity<Void> deleteGroup(@AuthenticationPrincipal UserDetails userDetails,
+                                             @PathVariable Long groupId) {
+        groupService.deleteGroup(userDetails.getUsername(), groupId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{groupId}/members/{userId}")
+    public ResponseEntity<Void> kickMember(@AuthenticationPrincipal UserDetails userDetails,
+                                            @PathVariable Long groupId,
+                                            @PathVariable Long userId) {
+        groupService.kickMember(userDetails.getUsername(), groupId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{groupId}/members/{userId}/role")
+    public ResponseEntity<MemberResponse> changeRole(@AuthenticationPrincipal UserDetails userDetails,
+                                                      @PathVariable Long groupId,
+                                                      @PathVariable Long userId,
+                                                      @Valid @RequestBody ChangeRoleRequest request) {
+        return ResponseEntity.ok(groupService.changeRole(userDetails.getUsername(), groupId, userId, request));
     }
 }

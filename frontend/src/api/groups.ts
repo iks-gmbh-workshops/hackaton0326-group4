@@ -1,5 +1,5 @@
 import api from './client';
-import type { GroupResponse, MemberResponse, InviteResponse } from './types';
+import type { GroupResponse, GroupRole, MemberResponse, InviteResponse } from './types';
 
 export const groupsApi = {
   create: (data: { name: string; description?: string }) =>
@@ -13,6 +13,14 @@ export const groupsApi = {
     api.get<MemberResponse[]>(`/groups/${groupId}/members`),
 
   leaveGroup: (groupId: number) => api.delete(`/groups/${groupId}/members/me`),
+
+  deleteGroup: (groupId: number) => api.delete(`/groups/${groupId}`),
+
+  kickMember: (groupId: number, userId: number) =>
+    api.delete(`/groups/${groupId}/members/${userId}`),
+
+  changeRole: (groupId: number, userId: number, role: GroupRole) =>
+    api.put<MemberResponse>(`/groups/${groupId}/members/${userId}/role`, { role }),
 
   invite: (groupId: number, data: { email: string }) =>
     api.post<InviteResponse>(`/groups/${groupId}/invite`, data),

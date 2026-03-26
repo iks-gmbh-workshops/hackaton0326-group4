@@ -4,6 +4,7 @@ import com.drumdibum.activity.dto.ActivityResponse;
 import com.drumdibum.activity.dto.CreateActivityRequest;
 import com.drumdibum.activity.dto.RsvpRequest;
 import com.drumdibum.activity.dto.RsvpResponse;
+import com.drumdibum.activity.dto.UpdateActivityRequest;
 import com.drumdibum.exception.ResourceNotFoundException;
 import com.drumdibum.group.Group;
 import com.drumdibum.group.GroupMembership;
@@ -20,6 +21,7 @@ import org.mockito.InOrder;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -100,15 +102,33 @@ class ActivityServiceTest {
                 .build();
     }
 
+    private GroupMembership adminMembership(User user, Group group) {
+        return GroupMembership.builder()
+                .id(1L).user(user).group(group)
+                .status(GroupMembership.MembershipStatus.ACTIVE)
+                .role(GroupMembership.GroupRole.ADMIN)
+                .joinedAt(Instant.now())
+                .build();
+    }
+
+    private GroupMembership memberMembership(User user, Group group) {
+        return GroupMembership.builder()
+                .id(1L).user(user).group(group)
+                .status(GroupMembership.MembershipStatus.ACTIVE)
+                .role(GroupMembership.GroupRole.MEMBER)
+                .joinedAt(Instant.now())
+                .build();
+    }
+
     // --- createActivity ---
 
     @Test
-    void createActivity_success() {
+    void createActivity_asAdmin_succeeds() {
         User user = testUser();
         Group group = testGroup(user);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(groupRepository.findById(10L)).thenReturn(Optional.of(group));
-        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(true);
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(adminMembership(user, group)));
         when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> {
             Activity a = inv.getArgument(0);
             a.setId(100L);
@@ -142,7 +162,7 @@ class ActivityServiceTest {
         Group group = testGroup(user);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(groupRepository.findById(10L)).thenReturn(Optional.of(group));
-        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(false);
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.empty());
 
         CreateActivityRequest req = new CreateActivityRequest();
         req.setTitle("Hiking");
@@ -152,6 +172,26 @@ class ActivityServiceTest {
         assertThatThrownBy(() -> activityService.createActivity("test@example.com", req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("You are not a member of this group");
+
+        verify(activityRepository, never()).save(any());
+    }
+
+    @Test
+    void createActivity_asMember_throws() {
+        User user = testUser();
+        Group group = testGroup(user);
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(groupRepository.findById(10L)).thenReturn(Optional.of(group));
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(memberMembership(user, group)));
+
+        CreateActivityRequest req = new CreateActivityRequest();
+        req.setTitle("Hiking");
+        req.setGroupId(10L);
+        req.setScheduledAt(Instant.now().plus(1, ChronoUnit.DAYS));
+
+        assertThatThrownBy(() -> activityService.createActivity("test@example.com", req))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only admins can perform this action");
 
         verify(activityRepository, never()).save(any());
     }
@@ -262,7 +302,7 @@ class ActivityServiceTest {
     // --- cancelActivity ---
 
     @Test
-    void cancelActivity_success_marksActivityCanceledAndEmailsActiveMembers() {
+    void cancelActivity_asAdmin_marksActivityCanceledAndEmailsActiveMembers() {
         User canceler = testUser();
         User activeMember = anotherUser(2L, "jamie@example.com", "Jamie", "Stone");
         User inactiveMember = anotherUser(3L, "sam@example.com", "Sam", "Lee");
@@ -270,29 +310,24 @@ class ActivityServiceTest {
         Activity activity = testActivity(canceler, group);
 
         GroupMembership cancelerMembership = GroupMembership.builder()
-                .id(1L)
-                .user(canceler)
-                .group(group)
+                .id(1L).user(canceler).group(group)
+                .status(GroupMembership.MembershipStatus.ACTIVE)
+                .role(GroupMembership.GroupRole.ADMIN)
+                .build();
+        GroupMembership activeMembershipObj = GroupMembership.builder()
+                .id(2L).user(activeMember).group(group)
                 .status(GroupMembership.MembershipStatus.ACTIVE)
                 .build();
-        GroupMembership activeMembership = GroupMembership.builder()
-                .id(2L)
-                .user(activeMember)
-                .group(group)
-                .status(GroupMembership.MembershipStatus.ACTIVE)
-                .build();
-        GroupMembership inactiveMembership = GroupMembership.builder()
-                .id(3L)
-                .user(inactiveMember)
-                .group(group)
+        GroupMembership inactiveMembershipObj = GroupMembership.builder()
+                .id(3L).user(inactiveMember).group(group)
                 .status(GroupMembership.MembershipStatus.INACTIVE)
                 .build();
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(canceler));
         when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
-        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(true);
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(cancelerMembership));
         when(membershipRepository.findByGroupId(10L))
-                .thenReturn(List.of(cancelerMembership, activeMembership, inactiveMembership));
+                .thenReturn(List.of(cancelerMembership, activeMembershipObj, inactiveMembershipObj));
         when(activityRepository.save(activity)).thenReturn(activity);
 
         activityService.cancelActivity("test@example.com", 100L);
@@ -324,7 +359,7 @@ class ActivityServiceTest {
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
-        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(true);
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(adminMembership(user, group)));
 
         assertThatThrownBy(() -> activityService.cancelActivity("test@example.com", 100L))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -342,11 +377,29 @@ class ActivityServiceTest {
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
-        when(membershipRepository.existsByUserIdAndGroupId(1L, 10L)).thenReturn(false);
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> activityService.cancelActivity("test@example.com", 100L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("You are not a member of this group");
+
+        verify(activityRepository, never()).save(any());
+        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void cancelActivity_asMember_throws() {
+        User user = testUser();
+        Group group = testGroup(user);
+        Activity activity = testActivity(user, group);
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(memberMembership(user, group)));
+
+        assertThatThrownBy(() -> activityService.cancelActivity("test@example.com", 100L))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only admins can perform this action");
 
         verify(activityRepository, never()).save(any());
         verify(mailSender, never()).send(any(SimpleMailMessage.class));
@@ -363,6 +416,79 @@ class ActivityServiceTest {
                 .hasMessage("Activity not found");
 
         verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    // --- updateActivity ---
+
+    @Test
+    void updateActivity_asAdmin_succeeds() {
+        User user = testUser();
+        Group group = testGroup(user);
+        Activity activity = testActivity(user, group);
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(adminMembership(user, group)));
+        when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(rsvpRepository.findByActivityId(100L)).thenReturn(List.of());
+
+        Instant newDate = Instant.now().plus(14, ChronoUnit.DAYS);
+        UpdateActivityRequest req = new UpdateActivityRequest();
+        req.setTitle("Updated Title");
+        req.setDescription("Updated Description");
+        req.setScheduledAt(newDate);
+
+        ActivityResponse response = activityService.updateActivity("test@example.com", 100L, req);
+
+        assertThat(response.getTitle()).isEqualTo("Updated Title");
+        assertThat(response.getDescription()).isEqualTo("Updated Description");
+
+        ArgumentCaptor<Activity> captor = ArgumentCaptor.forClass(Activity.class);
+        verify(activityRepository).save(captor.capture());
+        assertThat(captor.getValue().getTitle()).isEqualTo("Updated Title");
+        assertThat(captor.getValue().getDescription()).isEqualTo("Updated Description");
+        assertThat(captor.getValue().getScheduledAt()).isEqualTo(newDate);
+    }
+
+    @Test
+    void updateActivity_asMember_throws() {
+        User user = testUser();
+        Group group = testGroup(user);
+        Activity activity = testActivity(user, group);
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(memberMembership(user, group)));
+
+        UpdateActivityRequest req = new UpdateActivityRequest();
+        req.setTitle("Updated");
+
+        assertThatThrownBy(() -> activityService.updateActivity("test@example.com", 100L, req))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only admins can perform this action");
+
+        verify(activityRepository, never()).save(any());
+    }
+
+    @Test
+    void updateActivity_canceledActivity_throws() {
+        User user = testUser();
+        Group group = testGroup(user);
+        Activity activity = testActivity(user, group);
+        activity.setCanceled(true);
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(activityRepository.findById(100L)).thenReturn(Optional.of(activity));
+        when(membershipRepository.findByUserIdAndGroupId(1L, 10L)).thenReturn(Optional.of(adminMembership(user, group)));
+
+        UpdateActivityRequest req = new UpdateActivityRequest();
+        req.setTitle("Updated");
+
+        assertThatThrownBy(() -> activityService.updateActivity("test@example.com", 100L, req))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Cannot edit a canceled activity");
+
+        verify(activityRepository, never()).save(any());
     }
 
     // --- getRsvps ---

@@ -21,12 +21,20 @@ export interface GroupResponse {
   memberCount: number;
 }
 
+export const GroupRole = {
+  ADMIN: 'ADMIN',
+  MEMBER: 'MEMBER',
+} as const;
+
+export type GroupRole = (typeof GroupRole)[keyof typeof GroupRole];
+
 export interface MemberResponse {
   userId: number;
   email: string;
   firstName: string;
   lastName: string;
   status: string;
+  role: GroupRole;
   joinedAt: string;
 }
 

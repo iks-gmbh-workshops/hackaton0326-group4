@@ -4,6 +4,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import type { AxiosResponse } from 'axios';
 import { ActivityDetailPage } from '@/pages/activities/ActivityDetailPage';
 import { activitiesApi } from '@/api/activities';
+import { groupsApi } from '@/api/groups';
 import { RsvpStatus } from '@/api/types';
 import { useAuth } from '@/hooks/useAuth';
 import { renderWithProviders } from '@/test/test-utils';
@@ -21,11 +22,18 @@ vi.mock('@/api/activities', () => ({
   },
 }));
 
+vi.mock('@/api/groups', () => ({
+  groupsApi: {
+    getMembers: vi.fn(),
+  },
+}));
+
 const mockedUseAuth = vi.mocked(useAuth);
 const mockedGetActivity = vi.mocked(activitiesApi.getActivity);
 const mockedCancelActivity = vi.mocked(activitiesApi.cancel);
 const mockedGetRsvps = vi.mocked(activitiesApi.getRsvps);
 const mockedUpdateRsvp = vi.mocked(activitiesApi.updateRsvp);
+const mockedGetMembers = vi.mocked(groupsApi.getMembers);
 
 describe('ActivityDetailPage', () => {
   it('renders the activity details and attendee sections', async () => {
@@ -80,6 +88,19 @@ describe('ActivityDetailPage', () => {
         },
       ],
     } as AxiosResponse);
+    mockedGetMembers.mockResolvedValue({
+      data: [
+        {
+          userId: 1,
+          email: 'alex@example.com',
+          firstName: 'Alex',
+          lastName: 'Miller',
+          status: 'ACTIVE',
+          role: 'ADMIN',
+          joinedAt: '2026-03-25T10:00:00Z',
+        },
+      ],
+    } as AxiosResponse);
 
     renderWithProviders(
       <Routes>
@@ -91,7 +112,7 @@ describe('ActivityDetailPage', () => {
     expect(await screen.findByText('Karaoke Night')).toBeInTheDocument();
     expect(screen.getByText('Bring your favorite song')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Go to Choir' })).toHaveAttribute('href', '/groups/4');
-    expect(screen.getByRole('button', { name: 'Cancel Activity' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Cancel Activity' })).toBeInTheDocument();
     expect(screen.getByText('Created by owner@example.com')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Accept' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Decline' })).toBeEnabled();
@@ -134,6 +155,19 @@ describe('ActivityDetailPage', () => {
           firstName: 'Alex',
           lastName: 'Miller',
           status: RsvpStatus.OPEN,
+        },
+      ],
+    } as AxiosResponse);
+    mockedGetMembers.mockResolvedValue({
+      data: [
+        {
+          userId: 1,
+          email: 'alex@example.com',
+          firstName: 'Alex',
+          lastName: 'Miller',
+          status: 'ACTIVE',
+          role: 'ADMIN',
+          joinedAt: '2026-03-25T10:00:00Z',
         },
       ],
     } as AxiosResponse);
@@ -192,6 +226,19 @@ describe('ActivityDetailPage', () => {
         },
       ],
     } as AxiosResponse);
+    mockedGetMembers.mockResolvedValue({
+      data: [
+        {
+          userId: 1,
+          email: 'alex@example.com',
+          firstName: 'Alex',
+          lastName: 'Miller',
+          status: 'ACTIVE',
+          role: 'ADMIN',
+          joinedAt: '2026-03-25T10:00:00Z',
+        },
+      ],
+    } as AxiosResponse);
     mockedCancelActivity.mockResolvedValue({} as AxiosResponse);
 
     const { user } = renderWithProviders(
@@ -203,7 +250,7 @@ describe('ActivityDetailPage', () => {
     );
 
     await screen.findByText('Karaoke Night');
-    await user.click(screen.getByRole('button', { name: 'Cancel Activity' }));
+    await user.click(await screen.findByRole('button', { name: 'Cancel Activity' }));
 
     const dialog = await screen.findByRole('dialog');
     await user.click(within(dialog).getByRole('button', { name: 'Cancel Activity' }));
@@ -249,6 +296,19 @@ describe('ActivityDetailPage', () => {
           firstName: 'Alex',
           lastName: 'Miller',
           status: RsvpStatus.OPEN,
+        },
+      ],
+    } as AxiosResponse);
+    mockedGetMembers.mockResolvedValue({
+      data: [
+        {
+          userId: 1,
+          email: 'alex@example.com',
+          firstName: 'Alex',
+          lastName: 'Miller',
+          status: 'ACTIVE',
+          role: 'ADMIN',
+          joinedAt: '2026-03-25T10:00:00Z',
         },
       ],
     } as AxiosResponse);

@@ -8,6 +8,7 @@ import com.drumdibum.group.GroupMembershipRepository;
 import com.drumdibum.group.GroupRepository;
 import com.drumdibum.user.User;
 import com.drumdibum.user.UserRepository;
+import org.springframework.security.access.AccessDeniedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -40,9 +41,7 @@ public class ActivityService {
         Group group = groupRepository.findById(request.getGroupId())
                 .orElseThrow(() -> new ResourceNotFoundException("Group not found"));
 
-        if (!membershipRepository.existsByUserIdAndGroupId(user.getId(), group.getId())) {
-            throw new IllegalArgumentException("You are not a member of this group");
-        }
+        requireAdmin(user.getId(), group.getId());
 
         Activity activity = Activity.builder()
                 .title(request.getTitle())
@@ -80,9 +79,7 @@ public class ActivityService {
         User user = findUserByEmail(email);
         Activity activity = findActivityById(activityId);
 
-        if (!membershipRepository.existsByUserIdAndGroupId(user.getId(), activity.getGroup().getId())) {
-            throw new IllegalArgumentException("You are not a member of this group");
-        }
+        requireAdmin(user.getId(), activity.getGroup().getId());
 
         if (activity.isCanceled()) {
             throw new IllegalArgumentException("Activity has already been canceled");
@@ -123,6 +120,39 @@ public class ActivityService {
         rsvpRepository.save(rsvp);
 
         return RsvpResponse.from(rsvp);
+    }
+
+    @Transactional
+    public ActivityResponse updateActivity(String email, Long activityId, UpdateActivityRequest request) {
+        User user = findUserByEmail(email);
+        Activity activity = findActivityById(activityId);
+
+        requireAdmin(user.getId(), activity.getGroup().getId());
+
+        if (activity.isCanceled()) {
+            throw new IllegalArgumentException("Cannot edit a canceled activity");
+        }
+
+        if (request.getTitle() != null) {
+            activity.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            activity.setDescription(request.getDescription());
+        }
+        if (request.getScheduledAt() != null) {
+            activity.setScheduledAt(request.getScheduledAt());
+        }
+        activityRepository.save(activity);
+
+        return toActivityResponse(activity);
+    }
+
+    private void requireAdmin(Long userId, Long groupId) {
+        GroupMembership membership = membershipRepository.findByUserIdAndGroupId(userId, groupId)
+                .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
+        if (membership.getRole() != GroupMembership.GroupRole.ADMIN) {
+            throw new AccessDeniedException("Only admins can perform this action");
+        }
     }
 
     private User findUserByEmail(String email) {
