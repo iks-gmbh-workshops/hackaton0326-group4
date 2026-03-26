@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface ActivityRepository extends JpaRepository<Activity, Long> {
     List<Activity> findByGroupId(Long groupId);
-    List<Activity> findByGroupIdAndScheduledAtAfterOrderByScheduledAtAsc(Long groupId, Instant now);
+    List<Activity> findByGroupIdAndCanceledFalseAndScheduledAtAfterOrderByScheduledAtAsc(Long groupId, Instant now);
 
     @Modifying
     @Query("DELETE FROM Activity a WHERE a.createdBy.id = :userId")

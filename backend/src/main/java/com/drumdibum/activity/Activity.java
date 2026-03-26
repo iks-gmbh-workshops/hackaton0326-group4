@@ -36,6 +36,10 @@ public class Activity {
     @Column(nullable = false)
     private Instant scheduledAt;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean canceled = false;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 

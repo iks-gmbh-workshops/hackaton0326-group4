@@ -18,6 +18,7 @@ public class ActivityResponse {
     private String groupName;
     private String createdByEmail;
     private Instant scheduledAt;
+    private boolean canceled;
     private Instant createdAt;
     private int acceptedCount;
     private int declinedCount;
@@ -42,6 +43,7 @@ public class ActivityResponse {
                 activity.getGroup().getName(),
                 activity.getCreatedBy().getEmail(),
                 activity.getScheduledAt(),
+                activity.isCanceled(),
                 activity.getCreatedAt(),
                 acceptedCount,
                 declinedCount,

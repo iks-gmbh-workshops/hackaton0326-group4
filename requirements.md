@@ -42,6 +42,7 @@ Web application for organizing groups and shared activities. Users can create gr
 | Show the same accepted, declined, and open RSVP count badges in the global activities list, with the badges in the mobile card's upper-right corner and before the date on larger screens | ActivityResponse counts + ActivityListPage | ActivityListPage | Done |
 | View upcoming activities for a group | ActivityController GET /api/groups/{id}/activities | GroupDetailPage / ActivityListPage | Done |
 | View activity details | ActivityController GET /api/activities/{id} | ActivityDetailPage | Done |
+| Cancel an activity from its detail page, mark it as canceled in the database, keep its RSVP entries, and notify the group's members by email | ActivityController PUT /api/activities/{id}/cancel + ActivityService cancellation emails | ActivityDetailPage cancel dialog | Done |
 | Show a visible button-style link to go to the group from the activity detail page | n/a | ActivityDetailPage | Done |
 | RSVP (accept / decline / open) | ActivityController PUT /api/activities/{id}/rsvps/me | ActivityDetailPage | Done |
 | View RSVP list for an activity | ActivityController GET /api/activities/{id}/rsvps | ActivityDetailPage | Done |
