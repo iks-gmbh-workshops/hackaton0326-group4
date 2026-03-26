@@ -95,12 +95,24 @@ export function RegisterPage() {
               <input
                 type="checkbox"
                 id="tosAccepted"
+                aria-labelledby="tosAccepted-label tosAccepted-link"
                 className="mt-1"
                 {...register('tosAccepted')}
               />
-              <Label htmlFor="tosAccepted" className="text-sm font-normal">
-                I accept the terms of service
-              </Label>
+              <div className="text-sm leading-6">
+                <Label htmlFor="tosAccepted" id="tosAccepted-label" className="mr-1 inline font-normal leading-6">
+                  I accept the
+                </Label>
+                <Link
+                  id="tosAccepted-link"
+                  to="/terms-of-service"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-accent underline underline-offset-4 hover:text-primary"
+                >
+                  terms of service
+                </Link>
+              </div>
             </div>
             {errors.tosAccepted && <p className="text-sm text-destructive">{errors.tosAccepted.message}</p>}
 

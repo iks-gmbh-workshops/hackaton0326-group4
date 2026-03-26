@@ -14,6 +14,7 @@ Web application for organizing groups and shared activities. Users can create gr
 | Registration (email, password, first/last name) | AuthController + AuthService | RegisterPage | Done |
 | Password validation (10+ chars, upper/lower/digit/special) | RegisterRequest @Pattern | Zod schema in RegisterPage | Done |
 | ToS acceptance at registration | @AssertTrue on tosAccepted | Checkbox + Zod literal(true) | Done |
+| Read the Terms of Service from the registration page | n/a | RegisterPage + TermsOfServicePage | Done |
 | Login / Logout | AuthController (JWT httpOnly cookie) | LoginPage + Navbar logout | Done |
 | JWT-based session (httpOnly cookie) | JwtService + JwtAuthenticationFilter + CookieService | Axios withCredentials | Done |
 | Provide basic test users for local development | Flyway migration creates BCrypt test accounts | n/a | Done |
