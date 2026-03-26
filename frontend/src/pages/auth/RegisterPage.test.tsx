@@ -32,6 +32,35 @@ describe('RegisterPage', () => {
     expect(screen.getByRole('link', { name: 'terms of service' })).toHaveAttribute('target', '_blank');
   });
 
+  it('marks the password criteria badges as fulfilled when the password becomes valid', async () => {
+    const { user, container } = renderWithProviders(
+      <Routes>
+        <Route path="/register" element={<RegisterPage />} />
+      </Routes>,
+      { route: '/register' },
+    );
+
+    const lengthBadge = container.querySelector('[data-criterion="length"]') as HTMLElement;
+    const lowercaseBadge = container.querySelector('[data-criterion="lowercase"]') as HTMLElement;
+    const uppercaseBadge = container.querySelector('[data-criterion="uppercase"]') as HTMLElement;
+    const digitBadge = container.querySelector('[data-criterion="digit"]') as HTMLElement;
+    const specialBadge = container.querySelector('[data-criterion="special"]') as HTMLElement;
+
+    expect(lengthBadge).toHaveAttribute('data-fulfilled', 'false');
+    expect(lowercaseBadge).toHaveAttribute('data-fulfilled', 'false');
+    expect(uppercaseBadge).toHaveAttribute('data-fulfilled', 'false');
+    expect(digitBadge).toHaveAttribute('data-fulfilled', 'false');
+    expect(specialBadge).toHaveAttribute('data-fulfilled', 'false');
+
+    await user.type(screen.getByLabelText('Password'), 'Abcdefg!12');
+
+    expect(lengthBadge).toHaveAttribute('data-fulfilled', 'true');
+    expect(lowercaseBadge).toHaveAttribute('data-fulfilled', 'true');
+    expect(uppercaseBadge).toHaveAttribute('data-fulfilled', 'true');
+    expect(digitBadge).toHaveAttribute('data-fulfilled', 'true');
+    expect(specialBadge).toHaveAttribute('data-fulfilled', 'true');
+  });
+
   it('does not count umlauts as special characters in the password rule', async () => {
     const { user } = renderWithProviders(
       <Routes>

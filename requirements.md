@@ -14,6 +14,7 @@ Web application for organizing groups and shared activities. Users can create gr
 | Registration (email, password, first/last name) | AuthController + AuthService | RegisterPage | Done |
 | Password validation (10+ chars, upper/lower/digit/special) | RegisterRequest @Pattern | Zod schema in RegisterPage | Done |
 | Password confirmation during registration | n/a | RegisterPage | Done |
+| Show live password criteria badges during registration | n/a | RegisterPage | Done |
 | ToS acceptance at registration | @AssertTrue on tosAccepted | Checkbox + Zod literal(true) | Done |
 | Read the Terms of Service from the registration page | n/a | RegisterPage + TermsOfServicePage | Done |
 | Login / Logout | AuthController (JWT httpOnly cookie) | LoginPage + Navbar logout | Done |

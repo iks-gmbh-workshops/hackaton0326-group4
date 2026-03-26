@@ -3,21 +3,38 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Check } from 'lucide-react';
 import { authApi } from '@/api/auth';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+
+const hasMinLength = (value: string) => value.length >= 10;
+const hasLowercase = (value: string) => /[a-z]/.test(value);
+const hasUppercase = (value: string) => /[A-Z]/.test(value);
+const hasDigit = (value: string) => /\d/.test(value);
+const hasSpecialCharacter = (value: string) => /[\p{P}\p{S}]/u.test(value);
+
+const passwordCriteria = [
+  { key: 'length', label: '10+ chars', matches: hasMinLength },
+  { key: 'lowercase', label: 'lowercase', matches: hasLowercase },
+  { key: 'uppercase', label: 'uppercase', matches: hasUppercase },
+  { key: 'digit', label: 'digit', matches: hasDigit },
+  { key: 'special', label: 'special char', matches: hasSpecialCharacter },
+] as const;
 
 const registerSchema = z.object({
   email: z.string().email('Please enter a valid email'),
   password: z
     .string()
     .min(10, 'Password must be at least 10 characters')
-    .regex(/[a-z]/, 'Must contain at least one lowercase letter')
-    .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
-    .regex(/\d/, 'Must contain at least one digit')
-    .refine((value) => /[\p{P}\p{S}]/u.test(value), 'Must contain at least one special character'),
+    .refine(hasLowercase, 'Must contain at least one lowercase letter')
+    .refine(hasUppercase, 'Must contain at least one uppercase letter')
+    .refine(hasDigit, 'Must contain at least one digit')
+    .refine(hasSpecialCharacter, 'Must contain at least one special character'),
   confirmPassword: z.string().min(1, 'Please confirm your password'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
@@ -40,10 +57,11 @@ export function RegisterPage() {
   const redirect = searchParams.get('redirect');
   const [error, setError] = useState('');
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterForm>({
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     defaultValues: { confirmPassword: '', tosAccepted: false as unknown as true },
   });
+  const passwordValue = watch('password', '');
 
   const onSubmit = async ({ confirmPassword: _confirmPassword, ...data }: RegisterForm) => {
     try {
@@ -58,7 +76,7 @@ export function RegisterPage() {
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle>
             <h2 className="text-2xl">Register</h2>
@@ -95,9 +113,37 @@ export function RegisterPage() {
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" {...register('password')} />
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-              <p className="text-xs text-muted-foreground">
-                At least 10 characters with uppercase, lowercase, digit, and special character.
-              </p>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Password requirements</p>
+                <div className="grid grid-cols-5 gap-1" aria-live="polite">
+                  {passwordCriteria.map((criterion) => {
+                    const fulfilled = criterion.matches(passwordValue);
+
+                    return (
+                      <Badge
+                        key={criterion.key}
+                        variant="outline"
+                        data-criterion={criterion.key}
+                        data-fulfilled={fulfilled ? 'true' : 'false'}
+                        className={cn(
+                          'h-8 w-full min-w-0 justify-center gap-1 rounded-md px-1.5 py-1 whitespace-nowrap overflow-visible',
+                          fulfilled
+                            ? 'border-primary/30 bg-primary/10 text-primary'
+                            : 'border-border bg-background text-muted-foreground',
+                        )}
+                      >
+                        <span className="inline-flex w-3 shrink-0 justify-center">
+                          <Check
+                            aria-hidden="true"
+                            className={cn('size-3 transition-opacity', fulfilled ? 'opacity-100' : 'opacity-0')}
+                          />
+                        </span>
+                        <span className="block min-w-0 text-center leading-tight">{criterion.label}</span>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
