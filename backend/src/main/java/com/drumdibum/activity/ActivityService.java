@@ -32,6 +32,7 @@ public class ActivityService {
     private final GroupMembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
+    private final RsvpService rsvpService;
 
     @Transactional
     public ActivityResponse createActivity(String email, CreateActivityRequest request) {
@@ -51,8 +52,9 @@ public class ActivityService {
                 .scheduledAt(request.getScheduledAt())
                 .build();
         activityRepository.save(activity);
+        rsvpService.createOpenRsvpsForActivity(activity);
 
-        return ActivityResponse.from(activity);
+        return toActivityResponse(activity);
     }
 
     @Transactional(readOnly = true)
@@ -63,14 +65,32 @@ public class ActivityService {
         return activityRepository
                 .findByGroupIdAndCanceledFalseAndScheduledAtAfterOrderByScheduledAtAsc(groupId, Instant.now())
                 .stream()
-                .map(ActivityResponse::from)
+                .map(this::toActivityResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public ActivityResponse getActivity(Long activityId) {
         Activity activity = findActivityById(activityId);
-        return ActivityResponse.from(activity);
+        return toActivityResponse(activity);
+    }
+
+    @Transactional
+    public void cancelActivity(String email, Long activityId) {
+        User user = findUserByEmail(email);
+        Activity activity = findActivityById(activityId);
+
+        if (!membershipRepository.existsByUserIdAndGroupId(user.getId(), activity.getGroup().getId())) {
+            throw new IllegalArgumentException("You are not a member of this group");
+        }
+
+        if (activity.isCanceled()) {
+            throw new IllegalArgumentException("Activity has already been canceled");
+        }
+
+        activity.setCanceled(true);
+        activityRepository.save(activity);
+        sendCancellationEmails(activity, user);
     }
 
     @Transactional
@@ -156,5 +176,9 @@ public class ActivityService {
                             canceledByName));
                     mailSender.send(message);
                 });
+    }
+
+    private ActivityResponse toActivityResponse(Activity activity) {
+        return ActivityResponse.from(activity, rsvpRepository.findByActivityId(activity.getId()));
     }
 }

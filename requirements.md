@@ -1,11 +1,11 @@
-# DrumDiBum — Requirements & Implementation Status
+# DrumDiBum - Requirements & Implementation Status
 
 ## Overview
 Web application for organizing groups and shared activities. Users can create groups, invite members, and plan activities with RSVP functionality.
 
 ---
 
-## Phase 1 — MVP Requirements
+## Phase 1 - MVP Requirements
 
 ### 1. User Management
 
@@ -16,7 +16,7 @@ Web application for organizing groups and shared activities. Users can create gr
 | ToS acceptance at registration | @AssertTrue on tosAccepted | Checkbox + Zod literal(true) | Done |
 | Login / Logout | AuthController (JWT httpOnly cookie) | LoginPage + Navbar logout | Done |
 | JWT-based session (httpOnly cookie) | JwtService + JwtAuthenticationFilter + CookieService | Axios withCredentials | Done |
-| Seed basic test users for local development | Flyway migration inserts BCrypt test accounts | â€” | Done |
+| Provide basic test users for local development | Flyway migration creates BCrypt test accounts | n/a | Done |
 
 ### 2. Group Management
 
@@ -28,7 +28,8 @@ Web application for organizing groups and shared activities. Users can create gr
 | View group members | GroupController GET /api/groups/{id}/members | GroupDetailPage | Done |
 | Invite members by email | InvitationController POST /api/groups/{id}/invite | GroupDetailPage invite form | Done |
 | Accept invitation (with token) | InvitationController POST /api/invitations/{token}/accept | InvitePage | Done |
-| Decline invitation | — (frontend only, no backend call) | InvitePage | Done |
+| Accepting an invitation automatically creates OPEN RSVPs for existing group activities | InvitationService + RsvpService | n/a | Done |
+| Decline invitation | - (frontend only, no backend call) | InvitePage | Done |
 | Leave group (cascade delete user's RSVPs in that group) | GroupController DELETE /api/groups/{id}/members/me | GroupDetailPage leave button | Done |
 
 ### 3. Activities
@@ -36,9 +37,13 @@ Web application for organizing groups and shared activities. Users can create gr
 | Requirement | Backend | Frontend | Status |
 |---|---|---|---|
 | Create activities for a group | ActivityController POST /api/activities | CreateActivityPage | Done |
+| Creating an activity automatically creates OPEN RSVPs for current group members | ActivityService + RsvpService | ActivityDetailPage RSVP list | Done |
+| Show right-aligned accepted, declined, and open RSVP count badges for upcoming activities in a group, with the badges in the mobile card's upper-right corner and before the date on larger screens | ActivityResponse counts + GroupDetailPage | GroupDetailPage | Done |
+| Show the same accepted, declined, and open RSVP count badges in the global activities list, with the badges in the mobile card's upper-right corner and before the date on larger screens | ActivityResponse counts + ActivityListPage | ActivityListPage | Done |
 | View upcoming activities for a group | ActivityController GET /api/groups/{id}/activities | GroupDetailPage / ActivityListPage | Done |
 | View activity details | ActivityController GET /api/activities/{id} | ActivityDetailPage | Done |
 | Cancel an activity from its detail page, mark it as canceled in the database, keep its RSVP entries, and notify the group's members by email | ActivityController PUT /api/activities/{id}/cancel + ActivityService cancellation emails | ActivityDetailPage cancel dialog | Done |
+| Show a visible button-style link to go to the group from the activity detail page | n/a | ActivityDetailPage | Done |
 | RSVP (accept / decline / open) | ActivityController PUT /api/activities/{id}/rsvps/me | ActivityDetailPage | Done |
 | View RSVP list for an activity | ActivityController GET /api/activities/{id}/rsvps | ActivityDetailPage | Done |
 
@@ -48,13 +53,7 @@ Web application for organizing groups and shared activities. Users can create gr
 |---|---|---|---|
 | View profile | UserController GET /api/users/me | ProfilePage | Done |
 | Edit profile (first/last name) | UserController PUT /api/users/me | ProfilePage | Done |
-| Delete account (GDPR, cascade memberships, RSVPs, owned groups, created activities, and clear session cookie) | UserController DELETE /api/users/me | ProfilePage | Done |
-
-### 5. Frontend Quality
-
-| Requirement | Backend | Frontend | Status |
-|---|---|---|---|
-| Frontend unit test setup and core flow coverage | — | Vitest + React Testing Library tests for ProtectedRoute, Navbar, LoginPage, InvitePage, CreateGroupPage, ActivityListPage, ActivityDetailPage, CreateActivityPage | Done |
+| Delete account (GDPR, cascade all data) | UserController DELETE /api/users/me | ProfilePage | Done |
 
 ---
 
@@ -76,9 +75,8 @@ Web application for organizing groups and shared activities. Users can create gr
 - API client layer (Axios) with all endpoint bindings
 - Auth context (useAuth hook with login/logout/session refresh)
 - Router setup with protected routes
-- Vitest + React Testing Library setup with shared test utilities
 - Navbar with links to Groups, Activities, Profile
-- **All pages completed:** LoginPage, RegisterPage, InvitePage, GroupListPage, CreateGroupPage, GroupDetailPage, ActivityListPage, CreateActivityPage, ActivityDetailPage, ProfilePage
+- All pages completed: LoginPage, RegisterPage, InvitePage, GroupListPage, CreateGroupPage, GroupDetailPage, ActivityListPage, CreateActivityPage, ActivityDetailPage, ProfilePage
 
 ### Infrastructure
 - docker-compose.yml (PostgreSQL 16 + Mailhog)

@@ -40,6 +40,9 @@ export interface ActivityResponse {
   scheduledAt: string;
   canceled: boolean;
   createdAt: string;
+  acceptedCount: number;
+  declinedCount: number;
+  openCount: number;
 }
 
 export const RsvpStatus = {
