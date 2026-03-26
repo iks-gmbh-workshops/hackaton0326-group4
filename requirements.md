@@ -42,6 +42,7 @@ Web application for organizing groups and shared activities. Users can create gr
 | Show the same accepted, declined, and open RSVP count badges in the global activities list, with the badges in the mobile card's upper-right corner and before the date on larger screens | ActivityResponse counts + ActivityListPage | ActivityListPage | Done |
 | View upcoming activities for a group | ActivityController GET /api/groups/{id}/activities | GroupDetailPage / ActivityListPage | Done |
 | View activity details | ActivityController GET /api/activities/{id} | ActivityDetailPage | Done |
+| Show a visible button-style link to go to the group from the activity detail page | n/a | ActivityDetailPage | Done |
 | RSVP (accept / decline / open) | ActivityController PUT /api/activities/{id}/rsvps/me | ActivityDetailPage | Done |
 | View RSVP list for an activity | ActivityController GET /api/activities/{id}/rsvps | ActivityDetailPage | Done |
 
@@ -51,13 +52,7 @@ Web application for organizing groups and shared activities. Users can create gr
 |---|---|---|---|
 | View profile | UserController GET /api/users/me | ProfilePage | Done |
 | Edit profile (first/last name) | UserController PUT /api/users/me | ProfilePage | Done |
-| Delete account (GDPR, cascade memberships, RSVPs, owned groups, created activities, and clear session cookie) | UserController DELETE /api/users/me | ProfilePage | Done |
-
-### 5. Frontend Quality
-
-| Requirement | Backend | Frontend | Status |
-|---|---|---|---|
-| Frontend unit test setup and core flow coverage | — | Vitest + React Testing Library tests for ProtectedRoute, Navbar, LoginPage, InvitePage, CreateGroupPage, ActivityListPage, ActivityDetailPage, CreateActivityPage | Done |
+| Delete account (GDPR, cascade all data) | UserController DELETE /api/users/me | ProfilePage | Done |
 
 ---
 
@@ -79,7 +74,6 @@ Web application for organizing groups and shared activities. Users can create gr
 - API client layer (Axios) with all endpoint bindings
 - Auth context (useAuth hook with login/logout/session refresh)
 - Router setup with protected routes
-- Vitest + React Testing Library setup with shared test utilities
 - Navbar with links to Groups, Activities, Profile
 - All pages completed: LoginPage, RegisterPage, InvitePage, GroupListPage, CreateGroupPage, GroupDetailPage, ActivityListPage, CreateActivityPage, ActivityDetailPage, ProfilePage
 

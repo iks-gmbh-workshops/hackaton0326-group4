@@ -60,18 +60,17 @@ export function ActivityDetailPage() {
   return (
     <div className="space-y-8">
       {/* Activity header */}
-      <div>
-        <Link
-          to={`/groups/${activity.groupId}`}
-          className="text-sm text-accent hover:underline"
-        >
-          {activity.groupName}
-        </Link>
-        <h1 className="mt-1 text-3xl">{activity.title}</h1>
+      <div className="space-y-3">
+        <Button asChild variant="outline" size="sm" className="w-fit text-iks-dark-blue">
+          <Link to={`/groups/${activity.groupId}`}>
+            Go to {activity.groupName}
+          </Link>
+        </Button>
+        <h1 className="text-3xl">{activity.title}</h1>
         {activity.description && (
-          <p className="mt-2 text-muted-foreground">{activity.description}</p>
+          <p className="text-muted-foreground">{activity.description}</p>
         )}
-        <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
+        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
           <span>
             {new Date(activity.scheduledAt).toLocaleDateString('de-DE', {
               weekday: 'long',
