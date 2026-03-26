@@ -39,7 +39,7 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle>
             <h2 className="text-2xl">Login</h2>
