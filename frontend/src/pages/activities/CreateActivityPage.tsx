@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
@@ -11,11 +11,48 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+function formatDatePart(value: number) {
+  return value.toString().padStart(2, '0');
+}
+
+function toDateInputValue(date: Date) {
+  return `${date.getFullYear()}-${formatDatePart(date.getMonth() + 1)}-${formatDatePart(date.getDate())}`;
+}
+
+function toTimeInputValue(date: Date) {
+  return `${formatDatePart(date.getHours())}:${formatDatePart(date.getMinutes())}`;
+}
+
+function getMinimumScheduledAt(now = new Date()) {
+  const nextMinute = new Date(now);
+  nextMinute.setSeconds(0, 0);
+  nextMinute.setMinutes(nextMinute.getMinutes() + 1);
+
+  return {
+    date: toDateInputValue(nextMinute),
+    time: toTimeInputValue(nextMinute),
+  };
+}
+
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
   groupId: z.number().min(1, 'Please select a group'),
-  scheduledAt: z.string().min(1, 'Date and time is required'),
+  scheduledDate: z.string().min(1, 'Date is required'),
+  scheduledTime: z.string().min(1, 'Time is required'),
+}).superRefine((value, ctx) => {
+  if (!value.scheduledDate || !value.scheduledTime) {
+    return;
+  }
+
+  const scheduledAt = new Date(`${value.scheduledDate}T${value.scheduledTime}`);
+  if (Number.isNaN(scheduledAt.getTime()) || scheduledAt.getTime() <= Date.now()) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['scheduledTime'],
+      message: 'Date and time must be in the future',
+    });
+  }
 });
 
 type FormData = z.infer<typeof schema>;
@@ -25,18 +62,21 @@ export function CreateActivityPage() {
   const [searchParams] = useSearchParams();
   const preselectedGroupId = searchParams.get('groupId');
   const [error, setError] = useState('');
+  const [minimumScheduledAt, setMinimumScheduledAt] = useState(getMinimumScheduledAt);
 
   const { data: groups } = useQuery({
     queryKey: ['groups'],
     queryFn: () => groupsApi.getMyGroups().then((r) => r.data),
   });
 
-  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       groupId: preselectedGroupId ? Number(preselectedGroupId) : 0,
     },
   });
+  const scheduledDate = useWatch({ control, name: 'scheduledDate' });
+  const scheduledTime = useWatch({ control, name: 'scheduledTime' });
 
   useEffect(() => {
     if (preselectedGroupId && groups?.some((group) => group.id === Number(preselectedGroupId))) {
@@ -44,12 +84,26 @@ export function CreateActivityPage() {
     }
   }, [groups, preselectedGroupId, setValue]);
 
+  useEffect(() => {
+    if (scheduledDate === minimumScheduledAt.date && scheduledTime && scheduledTime < minimumScheduledAt.time) {
+      setValue('scheduledTime', '', { shouldDirty: true, shouldValidate: true });
+    }
+  }, [minimumScheduledAt, scheduledDate, scheduledTime, setValue]);
+
+  const refreshMinimumScheduledAt = () => {
+    setMinimumScheduledAt(getMinimumScheduledAt());
+  };
+
+  const minimumTime = scheduledDate === minimumScheduledAt.date ? minimumScheduledAt.time : undefined;
+
   const onSubmit = async (data: FormData) => {
     try {
       setError('');
       const res = await activitiesApi.create({
-        ...data,
-        scheduledAt: new Date(data.scheduledAt).toISOString(),
+        title: data.title,
+        description: data.description,
+        groupId: data.groupId,
+        scheduledAt: new Date(`${data.scheduledDate}T${data.scheduledTime}`).toISOString(),
       });
       navigate(`/activities/${res.data.id}`);
     } catch {
@@ -108,11 +162,39 @@ export function CreateActivityPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="scheduledAt">Date & Time</Label>
-              <Input id="scheduledAt" type="datetime-local" {...register('scheduledAt')} />
-              {errors.scheduledAt && (
-                <p className="text-sm text-destructive">{errors.scheduledAt.message}</p>
-              )}
+              <Label>Date & Time</Label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="scheduledDate">Date</Label>
+                  <Input
+                    id="scheduledDate"
+                    type="date"
+                    min={minimumScheduledAt.date}
+                    onFocus={refreshMinimumScheduledAt}
+                    onPointerDown={refreshMinimumScheduledAt}
+                    {...register('scheduledDate')}
+                  />
+                  {errors.scheduledDate && (
+                    <p className="text-sm text-destructive">{errors.scheduledDate.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="scheduledTime">Time</Label>
+                  <Input
+                    id="scheduledTime"
+                    type="time"
+                    min={minimumTime}
+                    step={60}
+                    onFocus={refreshMinimumScheduledAt}
+                    onPointerDown={refreshMinimumScheduledAt}
+                    {...register('scheduledTime')}
+                  />
+                  {errors.scheduledTime && (
+                    <p className="text-sm text-destructive">{errors.scheduledTime.message}</p>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-3">

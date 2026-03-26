@@ -40,6 +40,7 @@ Web application for organizing groups and shared activities. Users can create gr
 | Requirement | Backend | Frontend | Status |
 |---|---|---|---|
 | Create activities for a group | ActivityController POST /api/activities | CreateActivityPage | Done |
+| Only allow scheduling new activities with a future date and time | CreateActivityRequest @Future | CreateActivityPage future-only datetime picker + validation | Done |
 | Creating an activity automatically creates OPEN RSVPs for current group members | ActivityService + RsvpService | ActivityDetailPage RSVP list | Done |
 | Show right-aligned accepted, declined, and open RSVP count badges for upcoming activities in a group, with the badges in the mobile card's upper-right corner and before the date on larger screens | ActivityResponse counts + GroupDetailPage | GroupDetailPage | Done |
 | Show the same accepted, declined, and open RSVP count badges in the global activities list, with the badges in the mobile card's upper-right corner and before the date on larger screens | ActivityResponse counts + ActivityListPage | ActivityListPage | Done |
